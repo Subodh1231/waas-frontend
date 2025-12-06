@@ -350,7 +350,7 @@ interface WeeklyScheduleEditorProps {
   updateScheduleDay: (dayOfWeek: number, field: keyof WeeklySchedule, value: any) => void;
 }
 
-const WeeklyScheduleEditor = ({ schedule, getScheduleForDay, updateScheduleDay }: WeeklyScheduleEditorProps) => {
+const WeeklyScheduleEditor = ({ getScheduleForDay, updateScheduleDay }: WeeklyScheduleEditorProps) => {
   return (
     <div className="space-y-3">
       {DAYS_OF_WEEK.map((dayName, index) => {
