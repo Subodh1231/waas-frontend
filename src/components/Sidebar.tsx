@@ -9,6 +9,7 @@ const Sidebar = () => {
     { path: '/chats', label: 'Chats' },
     { path: '/customers', label: 'Customers' },
     { path: '/services', label: 'Services' },
+    { path: '/availability', label: 'Availability' },
     { path: '/settings', label: 'Settings' },
   ];
 

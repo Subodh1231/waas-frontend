@@ -6,12 +6,18 @@ interface Service {
   name: string;
   price: number;
   description?: string;
+  consultationType?: string;
+  durationMinutes?: number;
+  color?: string;
 }
 
 interface ServiceFormData {
   name: string;
   price: string;
   description: string;
+  consultationType: string;
+  durationMinutes: string;
+  color: string;
 }
 
 const ServicesPage = () => {
@@ -22,7 +28,10 @@ const ServicesPage = () => {
   const [formData, setFormData] = useState<ServiceFormData>({
     name: '',
     price: '',
-    description: ''
+    description: '',
+    consultationType: '',
+    durationMinutes: '30',
+    color: '#3B82F6'
   });
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
@@ -57,7 +66,14 @@ const ServicesPage = () => {
 
   const openAddModal = () => {
     setEditingService(null);
-    setFormData({ name: '', price: '', description: '' });
+    setFormData({ 
+      name: '', 
+      price: '', 
+      description: '', 
+      consultationType: '', 
+      durationMinutes: '30', 
+      color: '#3B82F6' 
+    });
     setShowModal(true);
   };
 
@@ -66,7 +82,10 @@ const ServicesPage = () => {
     setFormData({
       name: service.name,
       price: service.price.toString(),
-      description: service.description || ''
+      description: service.description || '',
+      consultationType: service.consultationType || service.name,
+      durationMinutes: service.durationMinutes?.toString() || '30',
+      color: service.color || '#3B82F6'
     });
     setShowModal(true);
   };
@@ -74,7 +93,14 @@ const ServicesPage = () => {
   const closeModal = () => {
     setShowModal(false);
     setEditingService(null);
-    setFormData({ name: '', price: '', description: '' });
+    setFormData({ 
+      name: '', 
+      price: '', 
+      description: '', 
+      consultationType: '', 
+      durationMinutes: '30', 
+      color: '#3B82F6' 
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -95,7 +121,10 @@ const ServicesPage = () => {
       const payload = {
         name: formData.name.trim(),
         price: parseFloat(formData.price),
-        description: formData.description.trim()
+        description: formData.description.trim(),
+        consultationType: formData.consultationType.trim() || formData.name.trim(),
+        durationMinutes: parseInt(formData.durationMinutes),
+        color: formData.color
       };
 
       if (editingService) {
@@ -187,7 +216,10 @@ const ServicesPage = () => {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Name
+                  Consultation Type
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Duration
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Price
@@ -204,7 +236,23 @@ const ServicesPage = () => {
               {services.map((service) => (
                 <tr key={service.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{service.name}</div>
+                    <div className="flex items-center gap-2">
+                      <span 
+                        className="w-3 h-3 rounded-full flex-shrink-0" 
+                        style={{backgroundColor: service.color || '#3B82F6'}}
+                      ></span>
+                      <div>
+                        <div className="text-sm font-medium text-gray-900">{service.name}</div>
+                        {service.consultationType && service.consultationType !== service.name && (
+                          <div className="text-xs text-gray-500">{service.consultationType}</div>
+                        )}
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-700">
+                      {service.durationMinutes || 30} min
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-700">
@@ -254,9 +302,55 @@ const ServicesPage = () => {
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="e.g., Haircut"
+                  placeholder="e.g., General Consultation"
                   required
                 />
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-gray-700 text-sm font-bold mb-2">
+                  Consultation Type
+                </label>
+                <input
+                  type="text"
+                  value={formData.consultationType}
+                  onChange={(e) => setFormData({ ...formData, consultationType: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Leave blank to use service name"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label className="block text-gray-700 text-sm font-bold mb-2">
+                    Duration (minutes) *
+                  </label>
+                  <select
+                    value={formData.durationMinutes}
+                    onChange={(e) => setFormData({ ...formData, durationMinutes: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  >
+                    <option value="15">15 minutes</option>
+                    <option value="30">30 minutes</option>
+                    <option value="45">45 minutes</option>
+                    <option value="60">60 minutes</option>
+                    <option value="90">90 minutes</option>
+                    <option value="120">120 minutes</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-gray-700 text-sm font-bold mb-2">
+                    Color *
+                  </label>
+                  <input
+                    type="color"
+                    value={formData.color}
+                    onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+                    className="w-full h-10 px-1 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                    required
+                  />
+                </div>
               </div>
 
               <div className="mb-4">
@@ -286,6 +380,7 @@ const ServicesPage = () => {
                   rows={3}
                   placeholder="Optional description"
                 />
+                <p className="text-xs text-gray-500 mt-1">Duration affects appointment slot length</p>
               </div>
 
               <div className="flex justify-end gap-3">

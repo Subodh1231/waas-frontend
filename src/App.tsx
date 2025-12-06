@@ -5,11 +5,14 @@ import DashboardLayout from './layouts/DashboardLayout';
 import LoadingSpinner from './components/LoadingSpinner';
 
 // Lazy load pages for code splitting
+const LandingPage = lazy(() => import('./pages/LandingPage'));
 const LoginPage = lazy(() => import('./pages/LoginPage'));
+const OnboardingPage = lazy(() => import('./pages/OnboardingPage'));
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
 const ChatsPage = lazy(() => import('./pages/ChatsPage'));
 const CustomersPage = lazy(() => import('./pages/CustomersPage'));
 const ServicesPage = lazy(() => import('./pages/ServicesPage'));
+const AvailabilityPage = lazy(() => import('./pages/AvailabilityPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 
 function App() {
@@ -17,21 +20,24 @@ function App() {
     <BrowserRouter>
       <Suspense fallback={<LoadingSpinner />}>
         <Routes>
-          {/* Public route */}
+          {/* Public routes */}
+          <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/onboarding" element={<OnboardingPage />} />
 
           {/* Protected routes with Dashboard Layout */}
           <Route element={<ProtectedRoute />}>
             <Route element={<DashboardLayout />}>
-              <Route path="/" element={<DashboardPage />} />
+              <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/chats" element={<ChatsPage />} />
               <Route path="/customers" element={<CustomersPage />} />
               <Route path="/services" element={<ServicesPage />} />
+              <Route path="/availability" element={<AvailabilityPage />} />
               <Route path="/settings" element={<SettingsPage />} />
             </Route>
           </Route>
 
-          {/* Catch all - redirect to dashboard or login */}
+          {/* Catch all - redirect to landing */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>

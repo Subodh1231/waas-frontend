@@ -29,8 +29,8 @@ const LoginPage = () => {
       // Call login function from auth.ts
       await login(email, password);
       
-      // Success - navigate to chats
-      navigate('/chats');
+      // Success - navigate to dashboard
+      navigate('/dashboard');
     } catch (err: any) {
       // Failure - show error
       const errorMessage = err.response?.data?.message || err.message || 'Login failed. Please try again.';
@@ -148,6 +148,19 @@ const LoginPage = () => {
               )}
             </button>
           </form>
+
+          {/* Sign Up Link */}
+          <div className="mt-6 text-center">
+            <p className="text-gray-600 text-sm">
+              Don't have an account?{' '}
+              <a
+                href="/onboarding"
+                className="text-blue-600 hover:text-blue-700 font-semibold"
+              >
+                Sign up for free
+              </a>
+            </p>
+          </div>
         </div>
 
         {/* Footer Text */}
