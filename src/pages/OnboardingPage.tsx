@@ -214,6 +214,21 @@ const OnboardingPage = () => {
       localStorage.setItem('role', role);
       localStorage.setItem('email', email);
 
+      // Initialize WhatsApp with Bookzi number (auto-assign)
+      try {
+        await axios.post(
+          `${API_BASE_URL}/api/whatsapp/config/initialize`,
+          {},
+          {
+            headers: { Authorization: `Bearer ${token}` }
+          }
+        );
+        console.log('✅ WhatsApp initialized with Bookzi number');
+      } catch (whatsappError) {
+        console.error('⚠️ WhatsApp initialization failed (non-critical):', whatsappError);
+        // Continue even if WhatsApp fails - they can set it up later
+      }
+
       // Clear onboarding progress
       localStorage.removeItem(STORAGE_KEY);
 
@@ -847,59 +862,148 @@ const Step5WhatsAppSetup = ({
   data: WhatsAppSetup;
   onUpdate: (data: Partial<WhatsAppSetup>) => void;
 }) => {
+  const [showManualSetup, setShowManualSetup] = useState(false);
+
+  const handleGetBookziNumber = () => {
+    // Mark as selected - actual initialization happens at Step 6 completion
+    onUpdate({ phoneNumber: 'BOOKZI_PROVIDED', isConnected: true });
+  };
+
   return (
     <div>
       <h2 className="text-2xl font-bold text-gray-900 mb-2">WhatsApp Setup</h2>
       <p className="text-gray-600 mb-6">
-        Connect your WhatsApp Business account to receive bookings
+        Get your WhatsApp number instantly - we'll provide one for you!
       </p>
 
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-        <h3 className="font-semibold text-blue-900 mb-2">
-          📱 How to connect WhatsApp:
-        </h3>
-        <ol className="list-decimal list-inside space-y-2 text-sm text-blue-800">
-          <li>Go to Meta Business Suite (business.facebook.com)</li>
-          <li>Create a WhatsApp Business Account</li>
-          <li>Get your Phone Number ID and Access Token</li>
-          <li>Enter them in Settings → WhatsApp Configuration</li>
-          <li>Verify the connection by sending a test message</li>
-        </ol>
-      </div>
+      {!showManualSetup ? (
+        <div className="space-y-6">
+          {/* Recommended: Auto-assign Bookzi number */}
+          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-300 rounded-xl p-6">
+            <div className="flex items-start mb-4">
+              <div className="flex-shrink-0">
+                <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-2xl">
+                  ⚡
+                </div>
+              </div>
+              <div className="ml-4 flex-1">
+                <h3 className="text-lg font-bold text-blue-900 mb-2">
+                  Recommended: Get Free Bookzi Number
+                </h3>
+                <p className="text-sm text-blue-800 mb-4">
+                  Start immediately with a WhatsApp number provided by Bookzi. No setup needed!
+                </p>
+                <ul className="space-y-2 text-sm text-blue-700 mb-4">
+                  <li className="flex items-center">
+                    <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
+                    <span>Instant activation - ready in seconds</span>
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
+                    <span>30-day free trial included</span>
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
+                    <span>Switch to your own number anytime</span>
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
+                    <span>₹3,499/month after trial (includes number)</span>
+                  </li>
+                </ul>
+                <button
+                  onClick={handleGetBookziNumber}
+                  className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center"
+                >
+                  Continue with Free Bookzi Number →
+                </button>
+                <p className="text-xs text-blue-600 text-center mt-2">
+                  Your number will be assigned when you complete onboarding
+                </p>
+              </div>
+            </div>
+          </div>
 
-      <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            WhatsApp Business Phone Number
-          </label>
-          <input
-            type="tel"
-            value={data.phoneNumber}
-            onChange={(e) => onUpdate({ phoneNumber: e.target.value })}
-            placeholder="+91 98765 43210"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
+          {/* Alternative: Manual setup */}
+          <div className="text-center">
+            <button
+              onClick={() => setShowManualSetup(true)}
+              className="text-sm text-gray-600 hover:text-gray-900 underline"
+            >
+              Already have a WhatsApp Business number? Click here to configure it
+            </button>
+          </div>
         </div>
+      ) : (
+        <div className="space-y-6">
+          {/* Manual setup form */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <h3 className="font-semibold text-blue-900 mb-3 flex items-center">
+              <span className="text-2xl mr-2">📱</span>
+              Use Your Own WhatsApp Business Number
+            </h3>
+            <p className="text-sm text-blue-800 mb-4">
+              You'll need to configure this in <strong>Settings → WhatsApp</strong> after completing onboarding.
+              It takes 30-45 minutes to set up with Meta Business Suite.
+            </p>
+            
+            <div className="border-t border-blue-300 pt-3 mt-3">
+              <p className="text-sm font-semibold text-blue-900 mb-2">
+                📖 Need help with setup?
+              </p>
+              <a
+                href="https://developers.facebook.com/docs/whatsapp/cloud-api/get-started"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center text-sm text-blue-700 hover:text-blue-900 underline font-medium"
+              >
+                View Complete Setup Guide →
+              </a>
+            </div>
+          </div>
 
-        <div className="flex items-center space-x-2">
-          <input
-            type="checkbox"
-            checked={data.isConnected}
-            onChange={(e) => onUpdate({ isConnected: e.target.checked })}
-            className="rounded"
-          />
-          <label className="text-sm text-gray-700">
-            I have configured WhatsApp in Settings
-          </label>
-        </div>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                WhatsApp Business Phone Number (Optional)
+              </label>
+              <input
+                type="tel"
+                value={data.phoneNumber === 'BOOKZI_PROVIDED' ? '' : data.phoneNumber}
+                onChange={(e) => onUpdate({ phoneNumber: e.target.value })}
+                placeholder="+91 98765 43210"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
 
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-          <p className="text-sm text-yellow-800">
-            <strong>Note:</strong> You can complete WhatsApp setup later from
-            Settings. For now, check the box above to continue.
-          </p>
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                checked={data.isConnected}
+                onChange={(e) => onUpdate({ isConnected: e.target.checked })}
+                className="rounded"
+              />
+              <label className="text-sm text-gray-700">
+                I will configure WhatsApp in Settings after onboarding
+              </label>
+            </div>
+
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <p className="text-sm text-yellow-800">
+                <strong>Note:</strong> With your own number, you'll pay only ₹2,999/month (save ₹500).
+                Complete the setup in Settings → WhatsApp after onboarding.
+              </p>
+            </div>
+
+            <button
+              onClick={() => setShowManualSetup(false)}
+              className="text-sm text-gray-600 hover:text-gray-900"
+            >
+              ← Back to recommended option
+            </button>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

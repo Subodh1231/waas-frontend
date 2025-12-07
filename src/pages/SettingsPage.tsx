@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Settings, Building2, Clock, DollarSign, Bell, CreditCard, Globe } from 'lucide-react';
 import api from '../lib/api';
+import WhatsAppSettingsTab from '../components/WhatsAppSettingsTab';
 
 interface TenantConfig {
   business_name?: string;
@@ -97,11 +98,6 @@ const SettingsPage = () => {
     systemPrompt: ''
   });
   
-  const [whatsappData, setWhatsappData] = useState({
-    phoneNumberId: '',
-    accessToken: ''
-  });
-  
   const [paymentData, setPaymentData] = useState({
     razorpayKeyId: '',
     razorpayKeySecret: ''
@@ -155,11 +151,6 @@ const SettingsPage = () => {
       setLanguageData({
         preferredLanguage: tenant.config?.preferred_language || 'en',
         systemPrompt: tenant.config?.system_prompt || ''
-      });
-
-      setWhatsappData({
-        phoneNumberId: tenant.config?.whatsapp_phone_number_id || '',
-        accessToken: tenant.config?.whatsapp_access_token || ''
       });
 
       setPaymentData({
@@ -231,28 +222,6 @@ const SettingsPage = () => {
       showToast(error.response?.data?.message || 'Failed to save language settings', 'error');
     } finally {
       setSaving({ ...saving, language: false });
-    }
-  };
-
-  const saveWhatsApp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      setSaving({ ...saving, whatsapp: true });
-      const updatedTenant: Tenant = {
-        ...tenant!,
-        config: {
-          ...tenant!.config,
-          whatsapp_phone_number_id: whatsappData.phoneNumberId,
-          whatsapp_access_token: whatsappData.accessToken
-        }
-      };
-      await api.put('/api/tenants/me', updatedTenant);
-      showToast('WhatsApp settings saved successfully', 'success');
-      await fetchTenantData();
-    } catch (error: any) {
-      showToast(error.response?.data?.message || 'Failed to save WhatsApp settings', 'error');
-    } finally {
-      setSaving({ ...saving, whatsapp: false });
     }
   };
 
@@ -586,56 +555,7 @@ const SettingsPage = () => {
 
           {/* WhatsApp Section */}
           {activeSection === 'whatsapp' && (
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex items-center gap-3 mb-6">
-                <Settings className="w-6 h-6 text-blue-600" />
-                <h2 className="text-2xl font-bold text-gray-900">WhatsApp Configuration</h2>
-              </div>
-              
-              <form onSubmit={saveWhatsApp} className="space-y-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Phone Number ID
-                  </label>
-                  <input
-                    type="text"
-                    value={whatsappData.phoneNumberId}
-                    onChange={(e) => setWhatsappData({ ...whatsappData, phoneNumberId: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="1234567890"
-                  />
-                  <p className="mt-1 text-sm text-gray-500">
-                    Your WhatsApp Business phone_number_id from Meta
-                  </p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Access Token
-                  </label>
-                  <input
-                    type="password"
-                    value={whatsappData.accessToken}
-                    onChange={(e) => setWhatsappData({ ...whatsappData, accessToken: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Enter access token"
-                  />
-                  <p className="mt-1 text-sm text-gray-500">
-                    Your WhatsApp Business API access token
-                  </p>
-                </div>
-
-                <div className="flex justify-end">
-                  <button
-                    type="submit"
-                    disabled={saving.whatsapp}
-                    className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-blue-400"
-                  >
-                    {saving.whatsapp ? 'Saving...' : 'Save WhatsApp Settings'}
-                  </button>
-                </div>
-              </form>
-            </div>
+            <WhatsAppSettingsTab />
           )}
 
           {/* Reminders Section */}

@@ -113,5 +113,80 @@ export const isAuthenticated = (): boolean => {
   return !!getToken();
 };
 
+// ============================================
+// WHATSAPP CONFIGURATION API
+// ============================================
+
+export interface WhatsAppConfig {
+  configType: 'BOOKZI_PROVIDED' | 'CLINIC_OWN';
+  activeDisplayNumber: string;
+  activePhoneNumberId: string;
+  subscriptionStatus: 'TRIAL' | 'ACTIVE' | 'EXPIRED' | 'CANCELLED';
+  subscriptionPlan: 'BASIC' | 'WITH_BOOKZI_NUMBER';
+  whatsappStatus: 'PENDING' | 'ACTIVE' | 'SUSPENDED' | 'BLOCKED';
+  trialEndsAt: string | null;
+  daysRemainingInTrial: number | null;
+  canSendMessages: boolean;
+  bookziDisplayNumber: string | null;
+  clinicDisplayNumber: string | null;
+  currentPlanPricing: PricingInfo;
+  alternativePlanPricing: PricingInfo;
+}
+
+export interface PricingInfo {
+  planName: string;
+  monthlyPrice: number;
+  whatsappNumberType: 'BOOKZI_PROVIDED' | 'CLINIC_OWN';
+  description: string;
+}
+
+export interface MigrateToClinicRequest {
+  clinicPhoneNumberId: string;
+  clinicAccessToken: string;
+  clinicDisplayNumber: string;
+  clinicWabaId: string;
+}
+
+export interface PricingResponse {
+  basicPlan: PricingInfo;
+  premiumPlan: PricingInfo;
+  currentPlan: string;
+  currentConfigType: string;
+}
+
+/**
+ * Get current WhatsApp configuration
+ */
+export const getWhatsAppConfig = async (): Promise<WhatsAppConfig> => {
+  const response = await api.get('/api/whatsapp/config');
+  return response.data;
+};
+
+/**
+ * Migrate to clinic-owned WhatsApp number
+ */
+export const migrateToClinicNumber = async (
+  request: MigrateToClinicRequest
+): Promise<WhatsAppConfig> => {
+  const response = await api.post('/api/whatsapp/config/migrate-to-clinic', request);
+  return response.data;
+};
+
+/**
+ * Revert to Bookzi-provided WhatsApp number
+ */
+export const revertToBookziNumber = async (): Promise<WhatsAppConfig> => {
+  const response = await api.post('/api/whatsapp/config/revert-to-bookzi');
+  return response.data;
+};
+
+/**
+ * Get WhatsApp pricing information
+ */
+export const getWhatsAppPricing = async (): Promise<PricingResponse> => {
+  const response = await api.get('/api/whatsapp/config/pricing');
+  return response.data;
+};
+
 // Export the configured axios instance as default
 export default api;
