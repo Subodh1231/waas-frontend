@@ -6,7 +6,7 @@ import {
   type WhatsAppConfig,
   type MigrateToClinicRequest,
 } from '../lib/api';
-import { Phone, CheckCircle, AlertCircle, ArrowRight, ExternalLink, RefreshCw, Copy, Settings } from 'lucide-react';
+import { CheckCircle, AlertCircle, ArrowRight, ExternalLink, RefreshCw, Copy, Settings } from 'lucide-react';
 
 export default function WhatsAppSettingsTab() {
   const [config, setConfig] = useState<WhatsAppConfig | null>(null);
