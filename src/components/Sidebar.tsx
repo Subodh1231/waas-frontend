@@ -7,6 +7,7 @@ const Sidebar = () => {
 
   const menuItems = [
     { path: '/chats', label: 'Chats' },
+    { path: '/appointments', label: 'Appointments' },
     { path: '/customers', label: 'Customers' },
     { path: '/services', label: 'Services' },
     { path: '/availability', label: 'Availability' },

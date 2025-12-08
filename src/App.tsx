@@ -13,6 +13,7 @@ const ChatsPage = lazy(() => import('./pages/ChatsPage'));
 const CustomersPage = lazy(() => import('./pages/CustomersPage'));
 const ServicesPage = lazy(() => import('./pages/ServicesPage'));
 const AvailabilityPage = lazy(() => import('./pages/AvailabilityPage'));
+const AppointmentsPage = lazy(() => import('./pages/AppointmentsPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 
 function App() {
@@ -33,6 +34,7 @@ function App() {
               <Route path="/customers" element={<CustomersPage />} />
               <Route path="/services" element={<ServicesPage />} />
               <Route path="/availability" element={<AvailabilityPage />} />
+              <Route path="/appointments" element={<AppointmentsPage />} />
               <Route path="/settings" element={<SettingsPage />} />
             </Route>
           </Route>
