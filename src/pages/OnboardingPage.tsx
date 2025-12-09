@@ -150,9 +150,19 @@ const OnboardingPage = () => {
   const handleSendOTP = async () => {
     setError('');
     
-    // Validate email and password first
-    if (!data.clinic.email || !data.clinic.password) {
-      setError('Please enter email and password first');
+    // Validate all required Step 1 fields
+    if (!data.clinic.name) {
+      setError('Please enter clinic name');
+      return;
+    }
+    
+    if (!data.clinic.email) {
+      setError('Please enter email address');
+      return;
+    }
+    
+    if (!data.clinic.password) {
+      setError('Please enter password');
       return;
     }
     
@@ -163,6 +173,21 @@ const OnboardingPage = () => {
     
     if (data.clinic.password.length < 6) {
       setError('Password must be at least 6 characters');
+      return;
+    }
+    
+    if (!data.clinic.specialization) {
+      setError('Please select a specialization');
+      return;
+    }
+    
+    if (!data.clinic.phone) {
+      setError('Please enter phone number');
+      return;
+    }
+    
+    if (!data.clinic.address) {
+      setError('Please enter clinic address');
       return;
     }
     
@@ -569,47 +594,6 @@ const Step1ClinicDetails = ({
           <p className="text-sm text-red-600">Passwords do not match</p>
         )}
 
-        {/* Email Verification Section */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex-1">
-              <h3 className="text-sm font-semibold text-gray-900 mb-1">Email Verification</h3>
-              {isEmailVerified ? (
-                <div className="flex items-center text-green-600">
-                  <CheckCircle className="w-5 h-5 mr-2" />
-                  <span className="text-sm font-medium">Email verified successfully!</span>
-                </div>
-              ) : (
-                <p className="text-sm text-gray-600">
-                  Verify your email to continue with registration
-                </p>
-              )}
-            </div>
-            {!isEmailVerified && (
-              <button
-                type="button"
-                onClick={onVerifyEmail}
-                disabled={
-                  isSendingOTP ||
-                  !data.email ||
-                  !data.password ||
-                  !data.confirmPassword ||
-                  data.password !== data.confirmPassword ||
-                  data.password.length < 6
-                }
-                className="ml-4 px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition whitespace-nowrap"
-              >
-                {isSendingOTP ? 'Sending...' : 'Verify Email'}
-              </button>
-            )}
-          </div>
-          {!isEmailVerified && (
-            <p className="text-xs text-gray-500 mt-2">
-              We'll send a 6-digit code to {data.email || 'your email'}
-            </p>
-          )}
-        </div>
-
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Specialization *
@@ -652,6 +636,41 @@ const Step1ClinicDetails = ({
             rows={3}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
+        </div>
+
+        {/* Email Verification - Moved to bottom of Step 1 */}
+        <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <h3 className="text-sm font-semibold text-gray-900 mb-1">
+                Email Verification Required
+              </h3>
+              <p className="text-sm text-gray-600">
+                Please complete all fields above, then verify your email to continue
+              </p>
+              {!isEmailVerified && (
+                <p className="text-xs text-gray-500 mt-1">
+                  We'll send a 6-digit code to {data.email || 'your email'}
+                </p>
+              )}
+            </div>
+            {isEmailVerified ? (
+              <div className="ml-4 flex items-center text-green-600 font-medium">
+                <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                Verified ✓
+              </div>
+            ) : (
+              <button
+                onClick={onVerifyEmail}
+                disabled={isSendingOTP || !data.name || !data.email || !data.password || !data.confirmPassword || !data.specialization || !data.phone || !data.address}
+                className="ml-4 px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition whitespace-nowrap"
+              >
+                {isSendingOTP ? 'Sending...' : 'Verify Email'}
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>
