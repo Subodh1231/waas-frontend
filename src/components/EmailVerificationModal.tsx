@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 
+// Get API base URL from environment variable
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+
 interface EmailVerificationModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -114,7 +117,7 @@ const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({
     setError('');
 
     try {
-      const response = await fetch('/api/auth/verify-and-register', {
+      const response = await fetch(`${API_BASE_URL}/api/auth/verify-and-register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -150,7 +153,7 @@ const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({
     setError('');
 
     try {
-      const response = await fetch('/api/auth/send-verification-otp', {
+      const response = await fetch(`${API_BASE_URL}/api/auth/send-verification-otp`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
