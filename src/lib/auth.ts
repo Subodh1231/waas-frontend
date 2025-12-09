@@ -56,8 +56,8 @@ export const logout = (): void => {
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(TENANT_KEY);
   
-  // Redirect to login page
-  window.location.href = '/login';
+  // Use pushState to redirect to login (works with SPA routing)
+  window.location.href = '/';
 };
 
 /**

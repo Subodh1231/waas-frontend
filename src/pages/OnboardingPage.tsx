@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CheckCircle } from 'lucide-react';
 import axios from 'axios';
+import EmailVerificationModal from '../components/EmailVerificationModal';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 
@@ -55,6 +56,11 @@ const OnboardingPage = () => {
   const [isComplete, setIsComplete] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  
+  // Email verification state
+  const [isEmailVerified, setIsEmailVerified] = useState(false);
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
+  const [isSendingOTP, setIsSendingOTP] = useState(false);
 
   // Load saved progress from localStorage
   const loadProgress = (): OnboardingData => {
@@ -140,7 +146,61 @@ const OnboardingPage = () => {
     setData((prev) => ({ ...prev, whatsapp: { ...prev.whatsapp, ...whatsapp } }));
   };
 
+  // Send verification OTP
+  const handleSendOTP = async () => {
+    setError('');
+    
+    // Validate email and password first
+    if (!data.clinic.email || !data.clinic.password) {
+      setError('Please enter email and password first');
+      return;
+    }
+    
+    if (data.clinic.password !== data.clinic.confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+    
+    if (data.clinic.password.length < 6) {
+      setError('Password must be at least 6 characters');
+      return;
+    }
+    
+    setIsSendingOTP(true);
+    
+    try {
+      const response = await axios.post(`${API_BASE_URL}/api/auth/send-verification-otp`, {
+        email: data.clinic.email,
+        password: data.clinic.password,
+        formData: data, // Send all form data to store temporarily
+      });
+      
+      if (response.status === 200) {
+        setShowVerificationModal(true);
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to send verification code');
+    } finally {
+      setIsSendingOTP(false);
+    }
+  };
+  
+  // Handle successful verification
+  const handleVerified = () => {
+    setIsEmailVerified(true);
+    setShowVerificationModal(false);
+    // Auto-save token is handled by the modal
+    // Navigate to dashboard
+    navigate('/dashboard');
+  };
+
   const nextStep = () => {
+    // For Step 1, require email verification before proceeding
+    if (currentStep === 1 && !isEmailVerified) {
+      setError('Please verify your email before continuing');
+      return;
+    }
+    
     if (currentStep < 6) {
       setCurrentStep(currentStep + 1);
     }
@@ -343,7 +403,13 @@ const OnboardingPage = () => {
 
         <div className="bg-white rounded-lg shadow-md p-6 md:p-8">
           {currentStep === 1 && (
-            <Step1ClinicDetails data={data.clinic} onUpdate={updateClinic} />
+            <Step1ClinicDetails 
+              data={data.clinic} 
+              onUpdate={updateClinic}
+              isEmailVerified={isEmailVerified}
+              onVerifyEmail={handleSendOTP}
+              isSendingOTP={isSendingOTP}
+            />
           )}
           {currentStep === 2 && (
             <Step2DoctorDetails data={data.doctor} onUpdate={updateDoctor} />
@@ -400,6 +466,14 @@ const OnboardingPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Email Verification Modal */}
+      <EmailVerificationModal
+        isOpen={showVerificationModal}
+        onClose={() => setShowVerificationModal(false)}
+        email={data.clinic.email}
+        onVerified={handleVerified}
+      />
     </div>
   );
 };
@@ -408,9 +482,15 @@ const OnboardingPage = () => {
 const Step1ClinicDetails = ({
   data,
   onUpdate,
+  isEmailVerified,
+  onVerifyEmail,
+  isSendingOTP,
 }: {
   data: ClinicDetails;
   onUpdate: (data: Partial<ClinicDetails>) => void;
+  isEmailVerified: boolean;
+  onVerifyEmail: () => void;
+  isSendingOTP: boolean;
 }) => {
   const specializations = [
     'General Medicine',
@@ -488,6 +568,47 @@ const Step1ClinicDetails = ({
         {data.password && data.confirmPassword && data.password !== data.confirmPassword && (
           <p className="text-sm text-red-600">Passwords do not match</p>
         )}
+
+        {/* Email Verification Section */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <h3 className="text-sm font-semibold text-gray-900 mb-1">Email Verification</h3>
+              {isEmailVerified ? (
+                <div className="flex items-center text-green-600">
+                  <CheckCircle className="w-5 h-5 mr-2" />
+                  <span className="text-sm font-medium">Email verified successfully!</span>
+                </div>
+              ) : (
+                <p className="text-sm text-gray-600">
+                  Verify your email to continue with registration
+                </p>
+              )}
+            </div>
+            {!isEmailVerified && (
+              <button
+                type="button"
+                onClick={onVerifyEmail}
+                disabled={
+                  isSendingOTP ||
+                  !data.email ||
+                  !data.password ||
+                  !data.confirmPassword ||
+                  data.password !== data.confirmPassword ||
+                  data.password.length < 6
+                }
+                className="ml-4 px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition whitespace-nowrap"
+              >
+                {isSendingOTP ? 'Sending...' : 'Verify Email'}
+              </button>
+            )}
+          </div>
+          {!isEmailVerified && (
+            <p className="text-xs text-gray-500 mt-2">
+              We'll send a 6-digit code to {data.email || 'your email'}
+            </p>
+          )}
+        </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
