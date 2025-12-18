@@ -229,7 +229,8 @@ const LoginPage = () => {
                       setForgotPasswordError('');
                       
                       try {
-                        const response = await fetch('/api/auth/forgot-password', {
+                        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+                        const response = await fetch(`${API_BASE_URL}/api/auth/forgot-password`, {
                           method: 'POST',
                           headers: {
                             'Content-Type': 'application/json',
@@ -239,8 +240,10 @@ const LoginPage = () => {
                           }),
                         });
                         
+                        const data = await response.json();
+                        
                         if (!response.ok) {
-                          throw new Error('Failed to send reset link');
+                          throw new Error(data.message || 'Failed to send reset link');
                         }
                         
                         setForgotPasswordSuccess(true);
