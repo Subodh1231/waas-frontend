@@ -92,8 +92,8 @@ const LandingPage = () => {
               Automated Reminders
             </h3>
             <p className="text-gray-600">
-              24-hour and 2-hour reminders sent automatically via WhatsApp. SMS
-              fallback ensures 100% delivery.
+              24-hour and 2-hour reminders sent automatically via WhatsApp to reduce
+              no-shows and keep your schedule full.
             </p>
           </div>
 
@@ -117,7 +117,7 @@ const LandingPage = () => {
               <BarChart className="h-6 w-6 text-orange-600" />
             </div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              Analytics Dashboard
+              Analytics Dashboard <span className="text-xs text-gray-500">(Coming Soon)</span>
             </h3>
             <p className="text-gray-600">
               Track bookings, revenue, no-show rates, and patient insights. Make
@@ -131,7 +131,7 @@ const LandingPage = () => {
               <CheckCircle className="h-6 w-6 text-pink-600" />
             </div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              Patient Management
+              Patient Management <span className="text-xs text-gray-500">(Coming Soon)</span>
             </h3>
             <p className="text-gray-600">
               Complete patient profiles with history, notes, and documents. Search and
@@ -148,7 +148,7 @@ const LandingPage = () => {
               Multi-language AI
             </h3>
             <p className="text-gray-600">
-              AI assistant understands Hindi, Kannada, Tamil, and more. Patients
+              AI assistant understands English, Hindi, Kannada, Tamil, and more. Patients
               communicate in their preferred language.
             </p>
           </div>
@@ -162,7 +162,7 @@ const LandingPage = () => {
             Start Your Free Trial Today
           </h2>
           <p className="text-xl mb-8 opacity-90">
-            14-day free trial · No credit card required · Cancel anytime
+            30-day free trial · No credit card required · Cancel anytime
           </p>
           <button
             onClick={() => navigate('/onboarding')}
@@ -177,10 +177,39 @@ const LandingPage = () => {
       <footer className="border-t border-gray-200 mt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center text-gray-600">
-            <p>© 2025 Bookzi. All rights reserved.</p>
-            <p className="text-sm mt-2">
-              WhatsApp Appointment Booking System for Clinics
+            <p className="text-lg font-semibold text-gray-800 mb-2">Need Help?</p>
+            <p className="mb-2">
+              Contact us at{' '}
+              <a 
+                href="mailto:admin@bookzi.in" 
+                className="text-blue-600 hover:text-blue-800 font-medium"
+              >
+                admin@bookzi.in
+              </a>
             </p>
+            <p className="text-sm text-gray-500 mb-4">We typically respond within 24 hours</p>
+            
+            <div className="border-t border-gray-200 pt-6 mt-6">
+              <p className="font-medium text-gray-800">© 2025 Bookzi. All rights reserved.</p>
+              <p className="text-sm mt-2">
+                WhatsApp Appointment Booking System for Clinics
+              </p>
+              <div className="mt-4 space-x-4">
+                <button
+                  onClick={() => navigate('/privacy-policy')}
+                  className="text-sm text-blue-600 hover:text-blue-800"
+                >
+                  Privacy Policy
+                </button>
+                <span className="text-gray-400">·</span>
+                <button
+                  onClick={() => navigate('/terms')}
+                  className="text-sm text-blue-600 hover:text-blue-800"
+                >
+                  Terms of Service
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </footer>

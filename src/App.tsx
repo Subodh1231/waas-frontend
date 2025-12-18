@@ -10,6 +10,8 @@ const LoginPage = lazy(() => import('./pages/LoginPage'));
 const OnboardingPage = lazy(() => import('./pages/OnboardingPage'));
 const SetupPage = lazy(() => import('./pages/SetupPage'));
 const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'));
+const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage'));
+const TermsPage = lazy(() => import('./pages/TermsPage'));
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
 const ChatsPage = lazy(() => import('./pages/ChatsPage'));
 const CustomersPage = lazy(() => import('./pages/CustomersPage'));
@@ -28,6 +30,8 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/onboarding" element={<OnboardingPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+          <Route path="/terms" element={<TermsPage />} />
 
           {/* Setup route - protected but outside DashboardLayout */}
           <Route element={<ProtectedRoute />}>
