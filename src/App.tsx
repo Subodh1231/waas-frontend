@@ -8,6 +8,7 @@ import LoadingSpinner from './components/LoadingSpinner';
 const LandingPage = lazy(() => import('./pages/LandingPage'));
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const OnboardingPage = lazy(() => import('./pages/OnboardingPage'));
+const SetupPage = lazy(() => import('./pages/SetupPage'));
 const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'));
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
 const ChatsPage = lazy(() => import('./pages/ChatsPage'));
@@ -27,6 +28,11 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/onboarding" element={<OnboardingPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
+
+          {/* Setup route - protected but outside DashboardLayout */}
+          <Route element={<ProtectedRoute />}>
+            <Route path="/setup" element={<SetupPage />} />
+          </Route>
 
           {/* Protected routes with Dashboard Layout */}
           <Route element={<ProtectedRoute />}>

@@ -134,8 +134,12 @@ const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({
         throw new Error(data.message || 'Invalid verification code');
       }
 
-      // Save token
-      localStorage.setItem('token', data.token);
+      // Save token and onboarding status
+      localStorage.setItem('waas_token', data.token);
+      localStorage.setItem('waas_tenant', data.tenantId);
+      if (data.onboardingStatus) {
+        localStorage.setItem('waas_onboarding_status', data.onboardingStatus);
+      }
       
       // Call success callback
       onVerified();

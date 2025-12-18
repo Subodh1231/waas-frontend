@@ -3,6 +3,7 @@ import api from './api';
 // Constants for localStorage keys
 const TOKEN_KEY = 'waas_token';
 const TENANT_KEY = 'waas_tenant';
+const ONBOARDING_STATUS_KEY = 'waas_onboarding_status';
 
 /**
  * Type definitions
@@ -16,6 +17,7 @@ export interface LoginResponse {
   token: string;
   tenantId: string;
   role: string;
+  onboardingStatus?: string;
 }
 
 export interface UserPayload {
@@ -39,11 +41,14 @@ export const login = async (email: string, password: string): Promise<LoginRespo
   // No X-Tenant-ID header needed - backend resolves tenant from email
   const response = await api.post<LoginResponse>('/api/auth/login', requestData);
   
-  const { token, tenantId } = response.data;
+  const { token, tenantId, onboardingStatus } = response.data;
   
-  // Save token and tenant ID to localStorage
+  // Save token, tenant ID, and onboarding status to localStorage
   localStorage.setItem(TOKEN_KEY, token);
   localStorage.setItem(TENANT_KEY, tenantId);
+  if (onboardingStatus) {
+    localStorage.setItem(ONBOARDING_STATUS_KEY, onboardingStatus);
+  }
   
   return response.data;
 };
@@ -55,6 +60,7 @@ export const logout = (): void => {
   // Remove authentication data from localStorage
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(TENANT_KEY);
+  localStorage.removeItem(ONBOARDING_STATUS_KEY);
   
   // Use pushState to redirect to login (works with SPA routing)
   window.location.href = '/';
@@ -62,6 +68,14 @@ export const logout = (): void => {
 
 /**
  * Get authentication token from localStorage
+ * @returns JWT token or null
+ */
+export const getAuthToken = (): string | null => {
+  return localStorage.getItem(TOKEN_KEY);
+};
+
+/**
+ * Get authentication token from localStorage (alias)
  * @returns JWT token or null
  */
 export const getToken = (): string | null => {
@@ -74,6 +88,22 @@ export const getToken = (): string | null => {
  */
 export const getTenantId = (): string | null => {
   return localStorage.getItem(TENANT_KEY);
+};
+
+/**
+ * Get onboarding status from localStorage
+ * @returns Onboarding status or 'STARTED' as default
+ */
+export const getOnboardingStatus = (): string => {
+  return localStorage.getItem(ONBOARDING_STATUS_KEY) || 'STARTED';
+};
+
+/**
+ * Set onboarding status in localStorage
+ * @param status - Onboarding status (STARTED, IN_PROGRESS, COMPLETED)
+ */
+export const setOnboardingStatus = (status: string): void => {
+  localStorage.setItem(ONBOARDING_STATUS_KEY, status);
 };
 
 /**
