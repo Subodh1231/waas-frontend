@@ -188,5 +188,72 @@ export const getWhatsAppPricing = async (): Promise<PricingResponse> => {
   return response.data;
 };
 
+// ============================================
+// META EMBEDDED SIGNUP API
+// ============================================
+
+export interface EmbeddedSignupStartResponse {
+  redirectUrl: string;
+  state: string;
+  expiresAt: number;
+}
+
+export interface EmbeddedSignupCallbackRequest {
+  code: string;
+  state: string;
+}
+
+export interface EmbeddedSignupCallbackResponse {
+  success: boolean;
+  wabaId?: string;
+  phoneNumberId?: string;
+  displayNumber?: string;
+  businessName?: string;
+  connectedAt?: string;
+  error?: string;
+}
+
+export interface WhatsAppConnectionStatus {
+  connected: boolean;
+  status: string;
+  configType: string;
+  displayNumber?: string;
+  businessName?: string;
+  connectedAt?: string;
+  wabaId?: string;
+  phoneNumberId?: string;
+  canSendMessages: boolean;
+  canReceiveMessages: boolean;
+  error?: string;
+}
+
+/**
+ * Start Meta Embedded Signup flow
+ * Returns OAuth URL to redirect user to Meta
+ */
+export const startEmbeddedSignup = async (): Promise<EmbeddedSignupStartResponse> => {
+  const response = await api.get('/api/whatsapp/embedded-signup/start');
+  return response.data;
+};
+
+/**
+ * Handle Embedded Signup callback
+ * Exchange authorization code for access token and setup WhatsApp
+ */
+export const handleEmbeddedSignupCallback = async (
+  request: EmbeddedSignupCallbackRequest
+): Promise<EmbeddedSignupCallbackResponse> => {
+  const response = await api.post('/api/whatsapp/embedded-signup/callback', request);
+  return response.data;
+};
+
+/**
+ * Get WhatsApp connection status
+ */
+export const getWhatsAppConnectionStatus = async (): Promise<WhatsAppConnectionStatus> => {
+  const response = await api.get('/api/whatsapp/embedded-signup/status');
+  return response.data;
+};
+
 // Export the configured axios instance as default
 export default api;

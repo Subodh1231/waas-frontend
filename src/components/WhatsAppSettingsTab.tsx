@@ -3,20 +3,26 @@ import {
   getWhatsAppConfig,
   migrateToClinicNumber,
   revertToBookziNumber,
+  startEmbeddedSignup,
+  getWhatsAppConnectionStatus,
   type WhatsAppConfig,
   type MigrateToClinicRequest,
+  type WhatsAppConnectionStatus,
 } from '../lib/api';
-import { CheckCircle, AlertCircle, ArrowRight, ExternalLink, RefreshCw, Copy, Settings } from 'lucide-react';
+import { CheckCircle, AlertCircle, ArrowRight, ExternalLink, RefreshCw, Copy, Settings, Link as LinkIcon } from 'lucide-react';
 
 export default function WhatsAppSettingsTab() {
   const [config, setConfig] = useState<WhatsAppConfig | null>(null);
+  const [connectionStatus, setConnectionStatus] = useState<WhatsAppConnectionStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showMigrateModal, setShowMigrateModal] = useState(false);
   const [showRevertModal, setShowRevertModal] = useState(false);
+  const [connectingEmbeddedSignup, setConnectingEmbeddedSignup] = useState(false);
 
   useEffect(() => {
     loadConfig();
+    loadConnectionStatus();
   }, []);
 
   const loadConfig = async () => {
@@ -29,6 +35,29 @@ export default function WhatsAppSettingsTab() {
       setError(err.response?.data?.message || 'Failed to load WhatsApp configuration');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadConnectionStatus = async () => {
+    try {
+      const status = await getWhatsAppConnectionStatus();
+      setConnectionStatus(status);
+    } catch (err: any) {
+      console.error('Failed to load connection status:', err);
+    }
+  };
+
+  const handleStartEmbeddedSignup = async () => {
+    try {
+      setConnectingEmbeddedSignup(true);
+      setError(null);
+      const response = await startEmbeddedSignup();
+      
+      // Redirect user to Meta OAuth page
+      window.location.href = response.redirectUrl;
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to start WhatsApp connection');
+      setConnectingEmbeddedSignup(false);
     }
   };
 
@@ -62,6 +91,73 @@ export default function WhatsAppSettingsTab() {
 
   return (
     <div className="space-y-6">
+      {/* Connection Status Banner - Show if NOT connected */}
+      {connectionStatus && !connectionStatus.connected && (
+        <div className="bg-yellow-50 border-2 border-yellow-400 rounded-lg p-6">
+          <div className="flex items-start">
+            <div className="flex-shrink-0">
+              <AlertCircle className="h-6 w-6 text-yellow-600" />
+            </div>
+            <div className="ml-3 flex-1">
+              <h3 className="text-lg font-medium text-yellow-900">
+                Connect Your WhatsApp Number
+              </h3>
+              <p className="mt-2 text-sm text-yellow-800 mb-4">
+                Connect your own WhatsApp Business number in just 2 clicks. Free forever with instant activation.
+              </p>
+              <button
+                onClick={handleStartEmbeddedSignup}
+                disabled={connectingEmbeddedSignup}
+                className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {connectingEmbeddedSignup ? (
+                  <>
+                    <RefreshCw className="w-5 h-5 animate-spin" />
+                    Connecting...
+                  </>
+                ) : (
+                  <>
+                    <LinkIcon className="w-5 h-5" />
+                    Connect WhatsApp Number
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Connected Status Banner - Show if connected via Embedded Signup */}
+      {connectionStatus && connectionStatus.connected && connectionStatus.configType === 'CLINIC_PROVIDED' && (
+        <div className="bg-green-50 border-2 border-green-500 rounded-lg p-6">
+          <div className="flex items-start">
+            <div className="flex-shrink-0">
+              <CheckCircle className="h-6 w-6 text-green-600" />
+            </div>
+            <div className="ml-3 flex-1">
+              <h3 className="text-lg font-medium text-green-900">
+                ✓ WhatsApp Connected
+              </h3>
+              <p className="mt-2 text-sm text-green-800">
+                Your WhatsApp Business number <strong>{connectionStatus.displayNumber}</strong> is connected and active.
+                {connectionStatus.businessName && ` Business: ${connectionStatus.businessName}`}
+              </p>
+              {connectionStatus.connectedAt && (
+                <p className="mt-1 text-xs text-green-700">
+                  Connected on {new Date(connectionStatus.connectedAt).toLocaleDateString('en-IN', { 
+                    day: '2-digit', 
+                    month: 'short', 
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Trial Banner */}
       {config.subscriptionStatus === 'TRIAL' && config.daysRemainingInTrial !== null && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">

@@ -19,6 +19,7 @@ const ServicesPage = lazy(() => import('./pages/ServicesPage'));
 const AvailabilityPage = lazy(() => import('./pages/AvailabilityPage'));
 const AppointmentsPage = lazy(() => import('./pages/AppointmentsPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
+const WhatsAppCallbackPage = lazy(() => import('./pages/WhatsAppCallbackPage'));
 
 function App() {
   return (
@@ -36,6 +37,7 @@ function App() {
           {/* Setup route - protected but outside DashboardLayout */}
           <Route element={<ProtectedRoute />}>
             <Route path="/setup" element={<SetupPage />} />
+            <Route path="/settings/whatsapp/callback" element={<WhatsAppCallbackPage />} />
           </Route>
 
           {/* Protected routes with Dashboard Layout */}
