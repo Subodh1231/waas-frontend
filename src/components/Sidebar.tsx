@@ -11,6 +11,7 @@ const Sidebar = () => {
     { path: '/customers', label: 'Customers' },
     { path: '/services', label: 'Services' },
     { path: '/availability', label: 'Availability' },
+    { path: '/subscription', label: 'Subscription' },
     { path: '/settings', label: 'Settings' },
   ];
 

@@ -118,26 +118,22 @@ export const isAuthenticated = (): boolean => {
 // ============================================
 
 export interface WhatsAppConfig {
-  configType: 'BOOKZI_PROVIDED' | 'CLINIC_OWN';
-  activeDisplayNumber: string;
-  activePhoneNumberId: string;
-  subscriptionStatus: 'TRIAL' | 'ACTIVE' | 'EXPIRED' | 'CANCELLED';
-  subscriptionPlan: 'BASIC' | 'WITH_BOOKZI_NUMBER';
-  whatsappStatus: 'PENDING' | 'ACTIVE' | 'SUSPENDED' | 'BLOCKED';
-  trialEndsAt: string | null;
-  daysRemainingInTrial: number | null;
+  connected: boolean;
+  whatsappStatus: 'NOT_CONNECTED' | 'CONNECTED' | 'SUSPENDED';
+  connectedAt: string | null;
+  displayNumber: string | null;
+  phoneNumberId: string | null;
+  wabaId: string | null;
+  businessName: string | null;
+  subscriptionStatus: 'ACTIVE' | 'SUSPENDED' | 'CANCELLED';
   canSendMessages: boolean;
-  bookziDisplayNumber: string | null;
-  clinicDisplayNumber: string | null;
-  currentPlanPricing: PricingInfo;
-  alternativePlanPricing: PricingInfo;
 }
 
 export interface PricingInfo {
-  planName: string;
-  monthlyPrice: number;
-  whatsappNumberType: 'BOOKZI_PROVIDED' | 'CLINIC_OWN';
+  conversationType: 'MARKETING' | 'UTILITY' | 'AUTHENTICATION' | 'SERVICE';
+  pricePerConversation: number;
   description: string;
+  freeIncluded: boolean;
 }
 
 export interface MigrateToClinicRequest {
@@ -181,9 +177,9 @@ export const revertToBookziNumber = async (): Promise<WhatsAppConfig> => {
 };
 
 /**
- * Get WhatsApp pricing information
+ * Get WhatsApp pricing information (Meta's per-conversation pricing)
  */
-export const getWhatsAppPricing = async (): Promise<PricingResponse> => {
+export const getWhatsAppPricing = async (): Promise<PricingInfo[]> => {
   const response = await api.get('/api/whatsapp/config/pricing');
   return response.data;
 };
