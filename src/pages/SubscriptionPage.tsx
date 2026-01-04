@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Check, X, Crown, Zap, TrendingUp, Users, Calendar, Database, AlertCircle, Clock } from 'lucide-react';
+import { Check, Crown, Zap, Users, Calendar, Database, AlertCircle, Clock } from 'lucide-react';
 import api from '../lib/api';
 
 interface SubscriptionPlan {
@@ -65,7 +65,7 @@ export default function SubscriptionPage() {
 
       // Load tenant info from WhatsApp config endpoint
       try {
-        const configResponse = await api.get('/api/whatsapp/config');
+        await api.get('/api/whatsapp/config');
         // For now, use default values - TODO: Add proper tenant endpoint
         setTenantInfo({
           id: '123',
