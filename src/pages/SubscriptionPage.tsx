@@ -50,29 +50,73 @@ export default function SubscriptionPage() {
       setLoading(true);
       setError(null);
 
-      // Load subscription plans
-      const plansResponse = await api.get('/api/whatsapp/config/subscription-plans');
-      // Parse features if they come as JSON strings
-      const parsedPlans = plansResponse.data.map((plan: any) => ({
-        ...plan,
-        features: typeof plan.features === 'string' 
-          ? JSON.parse(plan.features) 
-          : Array.isArray(plan.features) 
-            ? plan.features 
-            : []
-      }));
-      setPlans(parsedPlans);
+      // Use hardcoded subscription plans until backend endpoint is ready
+      // TODO: Replace with actual API call when /api/subscription/plans is implemented
+      const hardcodedPlans: SubscriptionPlan[] = [
+        {
+          id: 1,
+          planCode: 'BASIC',
+          planName: 'Basic Plan',
+          description: 'Perfect for small clinics starting with digital appointments',
+          monthlyPrice: 999,
+          annualPrice: 9990,
+          currency: 'INR',
+          maxStaffUsers: 3,
+          maxAppointmentsPerMonth: 100,
+          maxCustomers: 500,
+          features: [
+            'Manual appointment booking',
+            'Up to 100 appointments/month',
+            'Up to 3 staff users',
+            'Customer management',
+            'Basic analytics',
+            'Email support'
+          ],
+          displayOrder: 1,
+          isActive: true,
+          isRecommended: false,
+          billingCycle: 'MONTHLY'
+        },
+        {
+          id: 2,
+          planCode: 'WITH_BOOKZI_NUMBER',
+          planName: 'Premium Plan',
+          description: 'Best for growing clinics with WhatsApp automation',
+          monthlyPrice: 1999,
+          annualPrice: 19990,
+          currency: 'INR',
+          maxStaffUsers: 10,
+          maxAppointmentsPerMonth: 500,
+          maxCustomers: 5000,
+          features: [
+            'Everything in Basic',
+            'WhatsApp automation with Bookzi number',
+            'Up to 500 appointments/month',
+            'Up to 10 staff users',
+            'Advanced analytics',
+            'Priority email & chat support',
+            'Custom branding'
+          ],
+          displayOrder: 2,
+          isActive: true,
+          isRecommended: true,
+          billingCycle: 'MONTHLY'
+        }
+      ];
+      setPlans(hardcodedPlans);
 
       // Load tenant info from WhatsApp config endpoint
       try {
-        await api.get('/api/whatsapp/config');
-        // For now, use default values - TODO: Add proper tenant endpoint
+        const configResponse = await api.get('/api/whatsapp/config');
+        const config = configResponse.data;
+        
+        // Map WhatsApp config to tenant info
         setTenantInfo({
           id: '123',
           name: 'My Clinic',
-          currentPlanId: null, // null means in trial
-          trialEndsAt: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(), // 10 days from now
-          subscriptionStatus: 'ACTIVE',
+          currentPlanId: config.subscriptionPlan === 'WITH_BOOKZI_NUMBER' ? 2 : config.subscriptionPlan === 'BASIC' ? 1 : null,
+          trialEndsAt: config.trialEndsAt,
+          subscriptionStatus: config.subscriptionStatus || 'TRIAL',
           billingCycle: 'MONTHLY',
           appointmentsThisPeriod: 23,
           staffUsersCount: 2,
@@ -88,7 +132,7 @@ export default function SubscriptionPage() {
           name: 'My Clinic',
           currentPlanId: null,
           trialEndsAt: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(),
-          subscriptionStatus: 'ACTIVE',
+          subscriptionStatus: 'TRIAL',
           billingCycle: 'MONTHLY',
           appointmentsThisPeriod: 23,
           staffUsersCount: 2,
