@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Settings, Building2, Clock, DollarSign, Bell, CreditCard, Globe } from 'lucide-react';
+import { Settings, Building2, Clock, DollarSign, Bell, CreditCard, Globe, Users } from 'lucide-react';
 import api from '../lib/api';
 import WhatsAppSettingsTab from '../components/WhatsAppSettingsTab';
+import StaffManagementTab from '../components/StaffManagementTab';
 
 interface TenantConfig {
   business_name?: string;
@@ -320,6 +321,18 @@ const SettingsPage = () => {
               </button>
               
               <button
+                onClick={() => setActiveSection('staff')}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
+                  activeSection === 'staff'
+                    ? 'bg-blue-50 text-blue-700 font-medium'
+                    : 'text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                <Users className="w-5 h-5" />
+                <span>Team & Staff</span>
+              </button>
+              
+              <button
                 onClick={() => setActiveSection('whatsapp')}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
                   activeSection === 'whatsapp'
@@ -552,6 +565,9 @@ const SettingsPage = () => {
               </form>
             </div>
           )}
+
+          {/* Staff Management Section */}
+          {activeSection === 'staff' && <StaffManagementTab />}
 
           {/* WhatsApp Section */}
           {activeSection === 'whatsapp' && (

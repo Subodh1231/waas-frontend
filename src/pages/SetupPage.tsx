@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getAuthToken, setOnboardingStatus } from '../lib/auth';
-import api from '../lib/api';
+import api, { createStaff } from '../lib/api';
 
 interface ClinicProfile {
   phone: string;
@@ -13,6 +13,10 @@ interface DoctorDetails {
   doctorName: string;
   qualifications: string;
   photoUrl?: string;
+}
+
+interface DoctorsList {
+  doctors: DoctorDetails[];
 }
 
 interface ConsultationType {
@@ -51,10 +55,8 @@ const SetupPage = () => {
     specialization: ''
   });
 
-  const [doctorDetails, setDoctorDetails] = useState<DoctorDetails>({
-    doctorName: '',
-    qualifications: '',
-    photoUrl: ''
+  const [doctorDetails, setDoctorDetails] = useState<DoctorsList>({
+    doctors: [{ doctorName: '', qualifications: '', photoUrl: '' }]
   });
 
   const [consultationTypes, setConsultationTypes] = useState<ConsultationType[]>([
@@ -125,12 +127,30 @@ const SetupPage = () => {
         success = await handleSaveStep(1, 'clinic-profile', clinicProfile);
         break;
       case 2:
-        // Validate doctor details
-        if (!doctorDetails.doctorName || !doctorDetails.qualifications) {
-          setError('Please fill in all required fields');
+        // Validate doctor details and create staff members
+        const validDoctors = doctorDetails.doctors.filter(d => d.doctorName && d.qualifications);
+        if (validDoctors.length === 0) {
+          setError('Please add at least one doctor with name and qualifications');
           return;
         }
-        success = await handleSaveStep(2, 'doctor-details', doctorDetails);
+        
+        try {
+          // Create all staff members
+          for (const doctor of validDoctors) {
+            await createStaff({
+              name: doctor.doctorName,
+              role: 'DOCTOR',
+              qualifications: doctor.qualifications,
+              isActive: true
+            });
+          }
+          
+          // Save to old onboarding endpoint for backward compatibility (use first doctor)
+          success = await handleSaveStep(2, 'doctor-details', validDoctors[0]);
+        } catch (err: any) {
+          setError(err.response?.data?.message || 'Failed to create doctor profiles');
+          return;
+        }
         break;
       case 3:
         // Validate consultation types
@@ -427,53 +447,95 @@ const DoctorDetailsStep = ({
   data,
   onChange
 }: {
-  data: DoctorDetails;
-  onChange: (data: DoctorDetails) => void;
+  data: DoctorsList;
+  onChange: (data: DoctorsList) => void;
 }) => {
+  const addDoctor = () => {
+    onChange({
+      doctors: [...data.doctors, { doctorName: '', qualifications: '', photoUrl: '' }]
+    });
+  };
+
+  const removeDoctor = (index: number) => {
+    if (data.doctors.length === 1) return; // Keep at least one
+    const newDoctors = data.doctors.filter((_, i) => i !== index);
+    onChange({ doctors: newDoctors });
+  };
+
+  const updateDoctor = (index: number, field: keyof DoctorDetails, value: string) => {
+    const newDoctors = [...data.doctors];
+    newDoctors[index] = { ...newDoctors[index], [field]: value };
+    onChange({ doctors: newDoctors });
+  };
+
   return (
     <div>
-      <h2 className="text-2xl font-bold text-gray-900 mb-2">Doctor Details</h2>
-      <p className="text-gray-600 mb-6">Your professional information</p>
-
-      <div className="space-y-4">
+      <div className="flex justify-between items-center mb-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Doctor Name *
-          </label>
-          <input
-            type="text"
-            value={data.doctorName}
-            onChange={(e) => onChange({ ...data, doctorName: e.target.value })}
-            placeholder="Dr. Name"
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-          />
+          <h2 className="text-2xl font-bold text-gray-900">Add Doctors</h2>
+          <p className="text-gray-600 mt-1">Add all doctors who will provide consultations</p>
         </div>
+        <button
+          type="button"
+          onClick={addDoctor}
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium"
+        >
+          + Add Another Doctor
+        </button>
+      </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Qualifications *
-          </label>
-          <input
-            type="text"
-            value={data.qualifications}
-            onChange={(e) => onChange({ ...data, qualifications: e.target.value })}
-            placeholder="MBBS, MD"
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
+      <div className="space-y-6">
+        {data.doctors.map((doctor, index) => (
+          <div key={index} className="border border-gray-200 rounded-lg p-4 relative">
+            {data.doctors.length > 1 && (
+              <button
+                type="button"
+                onClick={() => removeDoctor(index)}
+                className="absolute top-4 right-4 text-red-600 hover:text-red-700 text-sm"
+              >
+                ✕ Remove
+              </button>
+            )}
+            
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Doctor {index + 1}
+            </h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Doctor Name *
+                </label>
+                <input
+                  type="text"
+                  value={doctor.doctorName}
+                  onChange={(e) => updateDoctor(index, 'doctorName', e.target.value)}
+                  placeholder="Dr. John Smith"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Photo URL (Optional)
-          </label>
-          <input
-            type="url"
-            value={data.photoUrl || ''}
-            onChange={(e) => onChange({ ...data, photoUrl: e.target.value })}
-            placeholder="https://..."
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Qualifications *
+                </label>
+                <input
+                  type="text"
+                  value={doctor.qualifications}
+                  onChange={(e) => updateDoctor(index, 'qualifications', e.target.value)}
+                  placeholder="MBBS, MD (Medicine)"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+        <p className="text-sm text-blue-800">
+          💡 <strong>Tip:</strong> You can add more doctors later from Settings → Team & Staff
+        </p>
       </div>
     </div>
   );
@@ -503,7 +565,14 @@ const ConsultationTypesStep = ({
   return (
     <div>
       <h2 className="text-2xl font-bold text-gray-900 mb-2">Consultation Types</h2>
-      <p className="text-gray-600 mb-6">Define the services you offer</p>
+      <p className="text-gray-600 mb-4">Define the services your clinic offers</p>
+      
+      <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+        <p className="text-sm text-blue-800">
+          ℹ️ <strong>Quick Setup:</strong> These services will be available for all doctors. 
+          You can assign services to specific doctors later in Settings → Team & Staff.
+        </p>
+      </div>
 
       <div className="space-y-4">
         {data.map((type, index) => (
@@ -572,7 +641,14 @@ const WorkingHoursStep = ({
   return (
     <div>
       <h2 className="text-2xl font-bold text-gray-900 mb-2">Working Hours</h2>
-      <p className="text-gray-600 mb-6">Set your availability</p>
+      <p className="text-gray-600 mb-4">Set your clinic's general operating hours</p>
+      
+      <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+        <p className="text-sm text-blue-800">
+          ℹ️ <strong>Quick Setup:</strong> These are default clinic hours. 
+          You can set individual schedules for each doctor later in Settings → Team & Staff.
+        </p>
+      </div>
 
       <div className="space-y-3">
         {days.map((day) => (

@@ -7,6 +7,72 @@ const TENANT_KEY = 'waas_tenant';
 // Base URL from environment variable or default to localhost
 const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 
+// ============================================================================
+// TYPE DEFINITIONS
+// ============================================================================
+
+export interface ServiceItem {
+  id: string;
+  name: string;
+  price: number;
+  description?: string;
+  consultationType?: string;
+  durationMinutes?: number;
+  color?: string;
+  providerId?: string;
+  tenantId?: string;
+  isActive?: boolean;
+}
+
+export interface DoctorAvailability {
+  id: string;
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+  slotDurationMinutes: number;
+  providerId?: string;
+  doctorName?: string;
+  isActive: boolean;
+  tenantId?: string;
+}
+
+export interface Staff {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  role: string;
+  specialization?: string;
+  licenseNumber?: string;
+  tenantId: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateStaffRequest {
+  name: string;
+  email: string;
+  phone?: string;
+  role: string;
+  specialization?: string;
+  licenseNumber?: string;
+  isActive?: boolean;
+}
+
+export interface CreateAvailabilityRequest {
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+  slotDurationMinutes: number;
+  providerId?: string;
+  doctorName?: string;
+}
+
+// ============================================================================
+// AXIOS INSTANCE
+// ============================================================================
+
 /**
  * Axios instance configured for WAAS API
  */
@@ -248,6 +314,395 @@ export const handleEmbeddedSignupCallback = async (
  */
 export const getWhatsAppConnectionStatus = async (): Promise<WhatsAppConnectionStatus> => {
   const response = await api.get('/api/whatsapp/embedded-signup/status');
+  return response.data;
+};
+
+// ============================================
+// APPOINTMENTS API
+// ============================================
+
+export interface PatientInfo {
+  phone: string;
+  name?: string;
+  email?: string;
+}
+
+export interface CreateAppointmentRequest {
+  patient: PatientInfo;
+  serviceId: string;
+  providerName: string;
+  providerId?: string;
+  startTime: string; // ISO 8601 format
+  durationMinutes?: number;
+  notes?: string;
+  source?: 'MANUAL' | 'WHATSAPP' | 'ONLINE';
+}
+
+export interface AppointmentResponse {
+  id: string;
+  tenantId: string;
+  patientId: string;
+  patientName: string;
+  patientPhone: string;
+  serviceId: string;
+  serviceName: string;
+  providerId?: string;
+  providerName: string;
+  startTime: string;
+  endTime: string;
+  durationMinutes: number;
+  status: string;
+  appointmentStatus: string;
+  source: 'MANUAL' | 'WHATSAPP' | 'ONLINE';
+  notes?: string;
+  createdBy?: string;
+  createdAt: string;
+  updatedAt: string;
+  chatId?: string;
+}
+
+export interface ConflictingAppointment {
+  id: string;
+  patientName: string;
+  startTime: string;
+  endTime: string;
+  serviceName: string;
+}
+
+export interface SuggestedSlot {
+  startTime: string;
+  endTime: string;
+  available: boolean;
+}
+
+export interface AvailabilityCheckResponse {
+  available: boolean;
+  message: string;
+  conflicts?: ConflictingAppointment[];
+  suggestions?: SuggestedSlot[];
+}
+
+export interface AppointmentFilters {
+  startDate: string; // YYYY-MM-DD
+  endDate: string;   // YYYY-MM-DD
+  source?: string;
+  status?: string;
+  providerName?: string;
+  page?: number;
+  size?: number;
+}
+
+export interface PagedAppointments {
+  content: AppointmentResponse[];
+  totalElements: number;
+  totalPages: number;
+  size: number;
+  number: number;
+}
+
+/**
+ * Create a new appointment
+ */
+export const createAppointment = async (
+  request: CreateAppointmentRequest
+): Promise<AppointmentResponse> => {
+  const response = await api.post('/api/appointments', request);
+  return response.data;
+};
+
+/**
+ * List appointments with filters
+ */
+export const listAppointments = async (
+  filters: AppointmentFilters
+): Promise<PagedAppointments> => {
+  const response = await api.get('/api/appointments', { params: filters });
+  return response.data;
+};
+
+/**
+ * Get appointment by ID
+ */
+export const getAppointment = async (id: string): Promise<AppointmentResponse> => {
+  const response = await api.get(`/api/appointments/${id}`);
+  return response.data;
+};
+
+/**
+ * Update appointment
+ */
+export const updateAppointment = async (
+  id: string,
+  updates: Partial<CreateAppointmentRequest>
+): Promise<AppointmentResponse> => {
+  const response = await api.put(`/api/appointments/${id}`, updates);
+  return response.data;
+};
+
+/**
+ * Update appointment status
+ */
+export const updateAppointmentStatus = async (
+  id: string,
+  status: string,
+  appointmentStatus?: string
+): Promise<AppointmentResponse> => {
+  const response = await api.put(`/api/appointments/${id}/status`, {
+    status,
+    appointmentStatus,
+  });
+  return response.data;
+};
+
+/**
+ * Cancel appointment
+ */
+export const cancelAppointment = async (id: string): Promise<void> => {
+  await api.delete(`/api/appointments/${id}`);
+};
+
+/**
+ * Check slot availability
+ */
+export const checkAvailability = async (
+  providerName: string,
+  startTime: string,
+  durationMinutes: number
+): Promise<AvailabilityCheckResponse> => {
+  const response = await api.post('/api/appointments/check-availability', {
+    providerName,
+    startTime,
+    durationMinutes,
+  });
+  return response.data;
+};
+
+/**
+ * Get patient appointment history
+ */
+export const getPatientHistory = async (patientId: string): Promise<{
+  appointments: AppointmentResponse[];
+  totalAppointments: number;
+}> => {
+  const response = await api.get(`/api/appointments/patients/${patientId}`);
+  return response.data;
+};
+
+// ============================================
+// STAFF API
+// ============================================
+
+export interface Staff {
+  id: string;
+  tenantId: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  role: 'DOCTOR' | 'NURSE' | 'THERAPIST' | 'RECEPTIONIST' | 'ADMIN';
+  qualifications?: string;
+  specialization?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateStaffRequest {
+  name: string;
+  email?: string;
+  phone?: string;
+  role?: 'DOCTOR' | 'NURSE' | 'THERAPIST' | 'RECEPTIONIST' | 'ADMIN';
+  qualifications?: string;
+  specialization?: string;
+  isActive?: boolean;
+}
+
+/**
+ * List all active staff members
+ */
+export const listStaff = async (role?: string, activeOnly: boolean = true): Promise<Staff[]> => {
+  const response = await api.get('/api/staff', {
+    params: { role, activeOnly },
+  });
+  return response.data;
+};
+
+/**
+ * Get doctors only
+ */
+export const getDoctors = async (): Promise<Staff[]> => {
+  const response = await api.get('/api/staff/doctors');
+  return response.data;
+};
+
+/**
+ * Get staff member by ID
+ */
+export const getStaff = async (id: string): Promise<Staff> => {
+  const response = await api.get(`/api/staff/${id}`);
+  return response.data;
+};
+
+/**
+ * Create new staff member
+ */
+export const createStaff = async (request: CreateStaffRequest): Promise<Staff> => {
+  const response = await api.post('/api/staff', request);
+  return response.data;
+};
+
+/**
+ * Update staff member
+ */
+export const updateStaff = async (
+  id: string,
+  updates: Partial<CreateStaffRequest>
+): Promise<Staff> => {
+  const response = await api.put(`/api/staff/${id}`, updates);
+  return response.data;
+};
+
+/**
+ * Deactivate staff member
+ */
+export const deactivateStaff = async (id: string): Promise<void> => {
+  await api.delete(`/api/staff/${id}`);
+};
+
+/**
+ * Search staff by name
+ */
+export const searchStaff = async (query: string): Promise<Staff[]> => {
+  const response = await api.get('/api/staff/search', {
+    params: { q: query },
+  });
+  return response.data;
+};
+
+// ============================================
+// PATIENTS/CUSTOMERS API
+// ============================================
+
+export interface PatientSearchResult {
+  id: string;
+  name: string;
+  phone: string;
+  email?: string;
+  lastAppointment?: string;
+  totalAppointments: number;
+}
+
+/**
+ * Search patients by phone number
+ */
+export const searchPatients = async (phone: string): Promise<PatientSearchResult[]> => {
+  const response = await api.get('/api/patients', {
+    params: { phone },
+  });
+  return response.data;
+};
+
+// ============================================
+// AVAILABILITY API
+// ============================================
+
+export interface DoctorAvailability {
+  id?: string;
+  tenantId: string;
+  providerId: string;
+  dayOfWeek: number; // 0=Sunday, 1=Monday, etc.
+  startTime: string; // HH:mm format
+  endTime: string; // HH:mm format
+  slotDuration: number; // in minutes
+  isActive: boolean;
+  doctorName?: string; // Deprecated
+}
+
+/**
+ * Get availability for a specific provider
+ */
+export const getProviderAvailability = async (providerId: string): Promise<DoctorAvailability[]> => {
+  const response = await api.get(`/api/availability/provider/${providerId}`);
+  return response.data;
+};
+
+/**
+ * Create a new availability slot
+ */
+export const createAvailability = async (availability: CreateAvailabilityRequest): Promise<DoctorAvailability> => {
+  const response = await api.post('/api/availability', availability);
+  return response.data;
+};
+
+/**
+ * Update an availability slot
+ */
+export const updateAvailability = async (id: string, availability: Partial<DoctorAvailability>): Promise<DoctorAvailability> => {
+  const response = await api.put(`/api/availability/${id}`, availability);
+  return response.data;
+};
+
+/**
+ * Delete an availability slot
+ */
+export const deleteAvailability = async (id: string): Promise<void> => {
+  await api.delete(`/api/availability/${id}`);
+};
+
+/**
+ * Bulk create availability slots
+ */
+export const bulkCreateAvailability = async (availabilities: CreateAvailabilityRequest[]): Promise<DoctorAvailability[]> => {
+  const response = await api.post('/api/availability/bulk', availabilities);
+  return response.data;
+};
+
+// ============================================
+// PROVIDER SERVICES API
+// ============================================
+
+/**
+ * Get services for a specific provider
+ */
+export const getProviderServices = async (providerId: string): Promise<ServiceItem[]> => {
+  const tenantId = localStorage.getItem('tenantId');
+  if (!tenantId) throw new Error('No tenant ID found');
+  
+  const response = await api.get(`/api/services`, {
+    params: { tenantId, providerId },
+  });
+  return response.data;
+};
+
+/**
+ * Get clinic-wide services (no provider assigned)
+ */
+export const getClinicServices = async (): Promise<ServiceItem[]> => {
+  const tenantId = localStorage.getItem('tenantId');
+  if (!tenantId) throw new Error('No tenant ID found');
+  
+  const response = await api.get(`/api/services`, {
+    params: { tenantId },
+  });
+  return response.data;
+};
+
+/**
+ * Assign a service to a provider
+ */
+export const assignServiceToProvider = async (serviceId: string, providerId: string): Promise<ServiceItem> => {
+  const response = await api.put(`/api/services/${serviceId}`, {
+    providerId,
+  });
+  return response.data;
+};
+
+/**
+ * Unassign a service from a provider (make it clinic-wide)
+ */
+export const unassignServiceFromProvider = async (serviceId: string): Promise<ServiceItem> => {
+  const response = await api.put(`/api/services/${serviceId}`, {
+    providerId: null,
+  });
   return response.data;
 };
 
