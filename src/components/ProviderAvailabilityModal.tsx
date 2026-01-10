@@ -70,7 +70,7 @@ export default function ProviderAvailabilityModal({
         grouped[slot.dayOfWeek].push({
           startTime: slot.startTime,
           endTime: slot.endTime,
-          slotDuration: slot.slotDuration,
+          slotDuration: slot.slotDuration || slot.slotDurationMinutes || 30,
         });
       });
       setDaySchedules(grouped);

@@ -140,7 +140,7 @@ export default function AddAppointmentModal({
       const result = await checkAvailability(
         providerName,
         startTime,
-        selectedService.durationMinutes
+        selectedService.durationMinutes || 30
       );
       setAvailability(result);
     } catch (err) {
@@ -289,7 +289,7 @@ export default function AddAppointmentModal({
                   </div>
                   <button
                     type="button"
-                    onClick={() => window.open(`/customers?search=${patient.phoneNumber}`, '_blank')}
+                    onClick={() => window.open(`/customers?search=${patient.phone}`, '_blank')}
                     className="text-xs text-blue-600 hover:text-blue-800 underline"
                   >
                     View History →

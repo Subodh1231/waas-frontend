@@ -30,6 +30,7 @@ export interface DoctorAvailability {
   startTime: string;
   endTime: string;
   slotDurationMinutes: number;
+  slotDuration?: number; // Deprecated, use slotDurationMinutes
   providerId?: string;
   doctorName?: string;
   isActive: boolean;
@@ -43,6 +44,7 @@ export interface Staff {
   phone?: string;
   role: string;
   specialization?: string;
+  qualifications?: string;
   licenseNumber?: string;
   tenantId: string;
   isActive: boolean;
@@ -52,10 +54,11 @@ export interface Staff {
 
 export interface CreateStaffRequest {
   name: string;
-  email: string;
+  email?: string;
   phone?: string;
   role: string;
   specialization?: string;
+  qualifications?: string;
   licenseNumber?: string;
   isActive?: boolean;
 }
@@ -492,30 +495,6 @@ export const getPatientHistory = async (patientId: string): Promise<{
 // STAFF API
 // ============================================
 
-export interface Staff {
-  id: string;
-  tenantId: string;
-  name: string;
-  email?: string;
-  phone?: string;
-  role: 'DOCTOR' | 'NURSE' | 'THERAPIST' | 'RECEPTIONIST' | 'ADMIN';
-  qualifications?: string;
-  specialization?: string;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface CreateStaffRequest {
-  name: string;
-  email?: string;
-  phone?: string;
-  role?: 'DOCTOR' | 'NURSE' | 'THERAPIST' | 'RECEPTIONIST' | 'ADMIN';
-  qualifications?: string;
-  specialization?: string;
-  isActive?: boolean;
-}
-
 /**
  * List all active staff members
  */
@@ -604,18 +583,6 @@ export const searchPatients = async (phone: string): Promise<PatientSearchResult
 // ============================================
 // AVAILABILITY API
 // ============================================
-
-export interface DoctorAvailability {
-  id?: string;
-  tenantId: string;
-  providerId: string;
-  dayOfWeek: number; // 0=Sunday, 1=Monday, etc.
-  startTime: string; // HH:mm format
-  endTime: string; // HH:mm format
-  slotDuration: number; // in minutes
-  isActive: boolean;
-  doctorName?: string; // Deprecated
-}
 
 /**
  * Get availability for a specific provider

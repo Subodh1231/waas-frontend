@@ -12,6 +12,7 @@ interface Booking {
   status: string;
   appointmentStatus?: string;
   source?: 'MANUAL' | 'WHATSAPP' | 'ONLINE';
+  providerName?: string;
   structuredData?: {
     doctorName?: string;
     phoneNumber?: string;
@@ -593,7 +594,7 @@ const BookingDetailModal = ({
             <div>
               <p className="text-sm text-gray-600 mb-1">Doctor/Provider</p>
               <p className="text-lg font-semibold text-gray-800">
-                {booking.providerName || booking.structuredData.doctorName}
+                {booking.providerName || booking.structuredData?.doctorName}
               </p>
             </div>
           )}
