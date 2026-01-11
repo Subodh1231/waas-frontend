@@ -1,14 +1,14 @@
 import { useNavigate } from 'react-router-dom';
-import { Calendar, MessageSquare, Bell, BarChart, CheckCircle } from 'lucide-react';
+import { Calendar, MessageSquare, Bell, BarChart, CheckCircle, Users } from 'lucide-react';
 
 const LandingPage = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+    <div className="min-h-screen w-screen overflow-x-hidden bg-gradient-to-br from-blue-50 via-white to-indigo-50">
       {/* Navigation */}
-      <nav className="border-b border-gray-200 bg-white/80 backdrop-blur">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <nav className="border-b border-gray-200 bg-white/80 backdrop-blur w-full">
+        <div className="w-full px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
               <h1 className="text-2xl font-bold text-blue-600">Bookzi</h1>
@@ -32,16 +32,16 @@ const LandingPage = () => {
       </nav>
 
       {/* Hero Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+      <section className="w-full px-8 py-20">
         <div className="text-center">
           <h1 className="text-5xl font-bold text-gray-900 mb-6">
-            WhatsApp Booking System
+            Complete Clinic Management
             <br />
-            <span className="text-blue-600">for Modern Clinics</span>
+            <span className="text-blue-600">OS for Modern Healthcare</span>
           </h1>
           <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-            Let patients book appointments via WhatsApp. Automated reminders,
-            AI-powered assistant, and complete clinic management - all in one place.
+            End-to-end appointment booking, patient management, and clinic operations.
+            Accept bookings from WhatsApp, web, and manual entry - all in one powerful platform.
           </p>
           <div className="flex justify-center space-x-4">
             <button
@@ -64,26 +64,54 @@ const LandingPage = () => {
       </section>
 
       {/* Features Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      <section className="w-full px-8 py-16">
         <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">
-          Everything You Need to Manage Your Clinic
+          All-in-One Clinic Operating System
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {/* Feature 1 */}
+          <div className="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow">
+            <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
+              <Calendar className="h-6 w-6 text-purple-600" />
+            </div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              Smart Appointment System
+            </h3>
+            <p className="text-gray-600">
+              Calendar and list views, weekly/monthly scheduling, slot management,
+              and availability controls. Perfect for desktop clinic operations.
+            </p>
+          </div>
+
+          {/* Feature 2 */}
           <div className="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow">
             <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
               <MessageSquare className="h-6 w-6 text-blue-600" />
             </div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              WhatsApp Bookings
+              WhatsApp Integration
             </h3>
             <p className="text-gray-600">
-              Patients book appointments naturally via WhatsApp chat. AI assistant
-              handles scheduling, confirmations, and cancellations.
+              AI-powered WhatsApp bot for 24/7 appointment booking. Patients book
+              in their language via chat - fully automated with smart scheduling.
             </p>
           </div>
 
-          {/* Feature 2 */}
+          {/* Feature 3 */}
+          <div className="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow">
+            <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center mb-4">
+              <Users className="h-6 w-6 text-indigo-600" />
+            </div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              Patient Management
+            </h3>
+            <p className="text-gray-600">
+              Complete patient database with contact info, appointment history,
+              and analytics. Search, filter, and manage all patient data in one place.
+            </p>
+          </div>
+
+          {/* Feature 4 */}
           <div className="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow">
             <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
               <Bell className="h-6 w-6 text-green-600" />
@@ -92,71 +120,43 @@ const LandingPage = () => {
               Automated Reminders
             </h3>
             <p className="text-gray-600">
-              24-hour and 2-hour reminders sent automatically via WhatsApp to reduce
-              no-shows and keep your schedule full.
-            </p>
-          </div>
-
-          {/* Feature 3 */}
-          <div className="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow">
-            <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
-              <Calendar className="h-6 w-6 text-purple-600" />
-            </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              Smart Scheduling
-            </h3>
-            <p className="text-gray-600">
-              Define your availability, slot duration, and consultation types. System
-              prevents double-booking automatically.
-            </p>
-          </div>
-
-          {/* Feature 4 */}
-          <div className="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow">
-            <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mb-4">
-              <BarChart className="h-6 w-6 text-orange-600" />
-            </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              Analytics Dashboard <span className="text-xs text-gray-500">(Coming Soon)</span>
-            </h3>
-            <p className="text-gray-600">
-              Track bookings, revenue, no-show rates, and patient insights. Make
-              data-driven decisions.
+              24-hour and 2-hour WhatsApp reminders sent automatically. Reduce
+              no-shows by up to 70% and keep your schedule optimized.
             </p>
           </div>
 
           {/* Feature 5 */}
           <div className="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow">
-            <div className="w-12 h-12 bg-pink-100 rounded-lg flex items-center justify-center mb-4">
-              <CheckCircle className="h-6 w-6 text-pink-600" />
+            <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mb-4">
+              <CheckCircle className="h-6 w-6 text-orange-600" />
             </div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              Patient Management <span className="text-xs text-gray-500">(Coming Soon)</span>
+              Services & Staff Management
             </h3>
             <p className="text-gray-600">
-              Complete patient profiles with history, notes, and documents. Search and
-              segment for targeted campaigns.
+              Manage services, pricing, duration, and provider availability. Set up
+              multiple staff members with individual schedules and specializations.
             </p>
           </div>
 
           {/* Feature 6 */}
           <div className="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow">
-            <div className="w-12 h-12 bg-cyan-100 rounded-lg flex items-center justify-center mb-4">
-              <MessageSquare className="h-6 w-6 text-cyan-600" />
+            <div className="w-12 h-12 bg-pink-100 rounded-lg flex items-center justify-center mb-4">
+              <BarChart className="h-6 w-6 text-pink-600" />
             </div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              Multi-language AI
+              Real-time Analytics
             </h3>
             <p className="text-gray-600">
-              AI assistant understands English, Hindi, Kannada, Tamil, and more. Patients
-              communicate in their preferred language.
+              Track appointments, patients, booking sources (WhatsApp/Web/Manual),
+              and clinic performance. Dashboard designed for desktop clinic operations.
             </p>
           </div>
         </div>
       </section>
 
       {/* Pricing Preview */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      <section className="w-full px-8 py-16">
         <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-12 text-center text-white">
           <h2 className="text-3xl font-bold mb-4">
             Start Your Free Trial Today
@@ -174,8 +174,8 @@ const LandingPage = () => {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-gray-200 mt-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <footer className="border-t border-gray-200 mt-16 w-full">
+        <div className="w-full px-8 py-8">
           <div className="text-center text-gray-600">
             <p className="text-lg font-semibold text-gray-800 mb-2">Need Help?</p>
             <p className="mb-2">
@@ -192,7 +192,7 @@ const LandingPage = () => {
             <div className="border-t border-gray-200 pt-6 mt-6">
               <p className="font-medium text-gray-800">© 2025 Bookzi. All rights reserved.</p>
               <p className="text-sm mt-2">
-                WhatsApp Appointment Booking System for Clinics
+                Complete Clinic Operating System · Appointment Management · WhatsApp Integration
               </p>
               <div className="mt-4 space-x-4">
                 <button
