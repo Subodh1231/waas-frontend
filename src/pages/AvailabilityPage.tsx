@@ -272,12 +272,13 @@ const AvailabilityPage = () => {
   }
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
-      <div className="mb-6">
+    <div className="h-screen w-full flex flex-col bg-gray-50">
+      <div className="px-8 pt-6 pb-4 shrink-0">
         <h1 className="text-2xl font-bold text-gray-900 mb-2">Availability Settings</h1>
         <p className="text-gray-600">Set your weekly schedule and manage blocked dates</p>
       </div>
 
+      <div className="px-8 pb-8 flex-1 overflow-auto">
       {/* Success Message */}
       {successMessage && (
         <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center">
@@ -307,7 +308,6 @@ const AvailabilityPage = () => {
         
         <div className="p-6">
           <WeeklyScheduleEditor 
-            schedule={schedule}
             getScheduleForDay={getScheduleForDay}
             updateScheduleDay={updateScheduleDay}
           />
@@ -339,13 +339,13 @@ const AvailabilityPage = () => {
           />
         </div>
       </div>
+      </div>
     </div>
   );
 };
 
 // Weekly Schedule Editor Component
 interface WeeklyScheduleEditorProps {
-  schedule: WeeklySchedule[];
   getScheduleForDay: (dayOfWeek: number) => WeeklySchedule;
   updateScheduleDay: (dayOfWeek: number, field: keyof WeeklySchedule, value: any) => void;
 }

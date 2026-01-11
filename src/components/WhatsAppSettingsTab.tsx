@@ -86,7 +86,7 @@ export default function WhatsAppSettingsTab() {
   const isConnected = connectionStatus?.connected || config?.connected;
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
+    <div className="space-y-6">
       {/* Header Section */}
       <div className="bg-gradient-to-r from-green-600 to-green-700 rounded-2xl p-8 text-white">
         <div className="flex items-center justify-between">

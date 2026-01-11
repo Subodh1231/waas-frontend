@@ -21,10 +21,13 @@ interface Booking {
 }
 
 type ViewMode = 'calendar' | 'list';
+type CalendarMode = 'week' | 'month';
 
 const AppointmentsPage = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('calendar');
+  const [calendarMode, setCalendarMode] = useState<CalendarMode>('week');
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [currentWeek, setCurrentWeek] = useState(new Date());
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [bookingsByDate, setBookingsByDate] = useState<Record<string, Booking[]>>({});
   const [loading, setLoading] = useState(true);
@@ -46,9 +49,18 @@ const AppointmentsPage = () => {
       setLoading(true);
 
       if (viewMode === 'calendar') {
-        // Fetch calendar view data for the current month
-        const start = format(startOfWeek(startOfMonth(currentMonth)), 'yyyy-MM-dd');
-        const end = format(endOfWeek(endOfMonth(currentMonth)), 'yyyy-MM-dd');
+        // Fetch calendar view data
+        let start: string, end: string;
+        
+        if (calendarMode === 'week') {
+          // Fetch current week
+          start = format(startOfWeek(currentWeek), 'yyyy-MM-dd');
+          end = format(endOfWeek(currentWeek), 'yyyy-MM-dd');
+        } else {
+          // Fetch current month
+          start = format(startOfWeek(startOfMonth(currentMonth)), 'yyyy-MM-dd');
+          end = format(endOfWeek(endOfMonth(currentMonth)), 'yyyy-MM-dd');
+        }
 
         const response = await api.get('/api/bookings/calendar', {
           params: { startDate: start, endDate: end }
@@ -79,7 +91,7 @@ const AppointmentsPage = () => {
 
   useEffect(() => {
     fetchBookings();
-  }, [viewMode, currentMonth]);
+  }, [viewMode, currentMonth, currentWeek, calendarMode]);
 
   // Update booking status
   const updateBookingStatus = async (bookingId: string, newStatus: string) => {
@@ -105,6 +117,110 @@ const AppointmentsPage = () => {
     }
   };
 
+  // Week Calendar rendering
+  const renderWeekCalendar = () => {
+    const weekStart = startOfWeek(currentWeek);
+    const weekEnd = endOfWeek(currentWeek);
+    const weekDays = eachDayOfInterval({ start: weekStart, end: weekEnd });
+
+    return (
+      <div className="bg-white rounded-lg shadow h-full flex flex-col">
+        {/* Week Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b sticky top-0 bg-white z-10">
+          <h2 className="text-xl font-semibold text-gray-800">
+            {format(weekStart, 'MMM d')} - {format(weekEnd, 'MMM d, yyyy')}
+          </h2>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setCurrentWeek(new Date(currentWeek.getTime() - 7 * 24 * 60 * 60 * 1000))}
+              className="px-3 py-1 text-gray-600 hover:bg-gray-100 rounded"
+            >
+              ← Previous
+            </button>
+            <button
+              onClick={() => setCurrentWeek(new Date())}
+              className="px-3 py-1 text-blue-600 hover:bg-blue-50 rounded font-medium"
+            >
+              This Week
+            </button>
+            <button
+              onClick={() => setCurrentWeek(new Date(currentWeek.getTime() + 7 * 24 * 60 * 60 * 1000))}
+              className="px-3 py-1 text-gray-600 hover:bg-gray-100 rounded"
+            >
+              Next →
+            </button>
+          </div>
+        </div>
+
+        {/* Week Grid */}
+        <div className="px-4 pb-4 pt-2 flex-1 overflow-auto">
+          <div className="grid grid-cols-7 gap-2 h-full">
+            {weekDays.map((day) => {
+              const dateKey = format(day, 'yyyy-MM-dd');
+              const dayBookings = bookingsByDate[dateKey] || [];
+              const isTodayDate = isToday(day);
+
+              return (
+                <div
+                  key={day.toString()}
+                  className={`border rounded p-3 flex flex-col ${
+                    isTodayDate ? 'ring-2 ring-blue-500 bg-blue-50' : 'bg-white'
+                  }`}
+                >
+                  {/* Day Header */}
+                  <div className="text-center mb-3 pb-2 border-b">
+                    <div className="text-xs font-medium text-gray-500 uppercase">
+                      {format(day, 'EEE')}
+                    </div>
+                    <div className={`text-2xl font-bold ${
+                      isTodayDate ? 'text-blue-600' : 'text-gray-800'
+                    }`}>
+                      {format(day, 'd')}
+                    </div>
+                  </div>
+
+                  {/* Appointments */}
+                  <div className="flex-1 space-y-2 overflow-y-auto">
+                    {dayBookings.length === 0 ? (
+                      <p className="text-xs text-gray-400 text-center mt-4">No appointments</p>
+                    ) : (
+                      dayBookings.map((booking) => {
+                        let bgColor = 'bg-gray-100 text-gray-800';
+                        if (booking.source === 'MANUAL') {
+                          bgColor = 'bg-blue-100 text-blue-800';
+                        } else if (booking.source === 'WHATSAPP') {
+                          bgColor = 'bg-green-100 text-green-800';
+                        } else if (booking.source === 'ONLINE') {
+                          bgColor = 'bg-purple-100 text-purple-800';
+                        }
+
+                        return (
+                          <div
+                            key={booking.id}
+                            onClick={() => setSelectedBooking(booking)}
+                            className={`text-xs p-2 rounded cursor-pointer hover:shadow-md transition-shadow ${bgColor}`}
+                          >
+                            <div className="font-semibold mb-1">
+                              {format(new Date(booking.dateTime), 'HH:mm')}
+                            </div>
+                            <div className="truncate">{booking.customerName}</div>
+                            <div className="text-[10px] opacity-75 truncate mt-1">
+                              {booking.serviceName}
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   // Calendar rendering
   const renderCalendar = () => {
     const monthStart = startOfMonth(currentMonth);
@@ -119,9 +235,9 @@ const AppointmentsPage = () => {
     }
 
     return (
-      <div className="bg-white rounded-lg shadow">
+      <div className="bg-white rounded-lg shadow h-full flex flex-col">
         {/* Calendar Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b">
+        <div className="flex items-center justify-between px-6 py-4 border-b sticky top-0 bg-white z-10">
           <h2 className="text-xl font-semibold text-gray-800">
             {format(currentMonth, 'MMMM yyyy')}
           </h2>
@@ -148,7 +264,7 @@ const AppointmentsPage = () => {
         </div>
 
         {/* Calendar Grid */}
-        <div className="p-4">
+        <div className="px-4 pb-4 flex-1 overflow-auto">
           {/* Day headers */}
           <div className="grid grid-cols-7 gap-1 mb-2">
             {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
@@ -172,7 +288,7 @@ const AppointmentsPage = () => {
                     key={day.toString()}
                     onClick={() => setSelectedDate(day)}
                     className={`
-                      min-h-[100px] p-2 border rounded cursor-pointer transition-colors
+                      min-h-[88px] p-2 border rounded cursor-pointer transition-colors
                       ${isCurrentMonth ? 'bg-white' : 'bg-gray-50'}
                       ${isTodayDate ? 'ring-2 ring-blue-500' : ''}
                       ${selectedDate && isSameDay(day, selectedDate) ? 'bg-blue-50 border-blue-400' : 'border-gray-200'}
@@ -302,7 +418,7 @@ const AppointmentsPage = () => {
     });
 
     return (
-      <div className="space-y-6">
+      <div className="space-y-6 flex-1">
         {/* Today's Appointments */}
         {todayBookings.length > 0 && (
           <div className="bg-white rounded-lg shadow">
@@ -368,9 +484,9 @@ const AppointmentsPage = () => {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="h-screen w-full flex flex-col bg-gray-50">
       {/* Header */}
-      <div className="mb-6 flex justify-between items-start">
+      <div className="px-8 pt-6 pb-4 flex justify-between items-start shrink-0">
         <div>
           <h1 className="text-3xl font-bold text-gray-800 mb-2">Appointments</h1>
           <p className="text-gray-600">Manage and view your clinic appointments</p>
@@ -384,8 +500,15 @@ const AppointmentsPage = () => {
         </button>
       </div>
 
+      <div className="px-8 shrink-0">
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-6">
+      <div
+        className={`grid gap-4 mb-4 transition-all ${
+          viewMode === 'calendar'
+            ? 'grid-cols-6'
+            : 'grid-cols-2 md:grid-cols-6'
+        }`}
+      >
         <StatCard label="Today" value={stats.today} color="blue" />
         <StatCard label="Total" value={stats.total} color="gray" />
         <StatCard label="Pending" value={stats.pending} color="yellow" />
@@ -404,7 +527,7 @@ const AppointmentsPage = () => {
               : 'bg-white text-gray-700 hover:bg-gray-50 border'
           }`}
         >
-          📅 Calendar View
+          📅 Calendar
         </button>
         <button
           onClick={() => setViewMode('list')}
@@ -414,18 +537,46 @@ const AppointmentsPage = () => {
               : 'bg-white text-gray-700 hover:bg-gray-50 border'
           }`}
         >
-          📋 List View
+          📋 List
         </button>
+        
+        {viewMode === 'calendar' && (
+          <>
+            <div className="w-px bg-gray-300 mx-2"></div>
+            <button
+              onClick={() => setCalendarMode('week')}
+              className={`px-4 py-2 rounded font-medium transition-colors ${
+                calendarMode === 'week'
+                  ? 'bg-blue-100 text-blue-700 border border-blue-300'
+                  : 'bg-white text-gray-700 hover:bg-gray-50 border'
+              }`}
+            >
+              Week
+            </button>
+            <button
+              onClick={() => setCalendarMode('month')}
+              className={`px-4 py-2 rounded font-medium transition-colors ${
+                calendarMode === 'month'
+                  ? 'bg-blue-100 text-blue-700 border border-blue-300'
+                  : 'bg-white text-gray-700 hover:bg-gray-50 border'
+              }`}
+            >
+              Month
+            </button>
+          </>
+        )}
+      </div>
       </div>
 
       {/* Content */}
+      <div className="flex-1 px-8 pb-6 overflow-auto">
       {loading ? (
         <div className="bg-white rounded-lg shadow p-12 text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading appointments...</p>
         </div>
       ) : viewMode === 'calendar' ? (
-        renderCalendar()
+        calendarMode === 'week' ? renderWeekCalendar() : renderCalendar()
       ) : (
         renderListView()
       )}
@@ -439,6 +590,7 @@ const AppointmentsPage = () => {
           onCancel={cancelBooking}
         />
       )}
+      </div>
 
       {/* Add Appointment Modal */}
       <AddAppointmentModal

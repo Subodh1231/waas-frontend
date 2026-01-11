@@ -3,7 +3,7 @@ import { X, AlertCircle, CheckCircle, Clock, User, Calendar, FileText } from 'lu
 import {
   createAppointment,
   checkAvailability,
-  getDoctors,
+  getServiceProviders,
   searchPatients,
   type CreateAppointmentRequest,
   type Staff,
@@ -39,6 +39,8 @@ export default function AddAppointmentModal({
 
   const [serviceId, setServiceId] = useState('');
   const [services, setServices] = useState<ServiceItem[]>([]);
+  const [allServices, setAllServices] = useState<ServiceItem[]>([]); // All available services
+  const [filteredServices, setFilteredServices] = useState<ServiceItem[]>([]); // Filtered by provider
 
   const [providerId, setProviderId] = useState('');
   const [providerName, setProviderName] = useState(defaultProvider || '');
@@ -87,8 +89,8 @@ export default function AddAppointmentModal({
 
   const loadProviders = async () => {
     try {
-      const doctors = await getDoctors();
-      setProviders(doctors);
+      const providers = await getServiceProviders();
+      setProviders(providers);
     } catch (err) {
       console.error('Failed to load providers:', err);
     }
@@ -97,13 +99,35 @@ export default function AddAppointmentModal({
   const loadServices = async () => {
     try {
       const response = await api.get('/api/services');
-      setServices(response.data);
+      setAllServices(response.data);
+      setServices(response.data); // Initially show all
     } catch (err) {
       console.error('Failed to load services:', err);
-      // Fallback to empty array
+      setAllServices([]);
       setServices([]);
     }
   };
+
+  // Filter services when provider changes
+  useEffect(() => {
+    if (providerId && allServices.length > 0) {
+      // Show services assigned to this provider OR clinic-wide services (no providerId)
+      const filtered = allServices.filter(
+        (service) => service.providerId === providerId || !service.providerId
+      );
+      setFilteredServices(filtered);
+      setServices(filtered);
+      
+      // Reset service selection if current service is not available for this provider
+      if (serviceId && !filtered.find(s => s.id === serviceId)) {
+        setServiceId('');
+      }
+    } else {
+      // No provider selected, show all services
+      setFilteredServices(allServices);
+      setServices(allServices);
+    }
+  }, [providerId, allServices, serviceId]);
 
   const searchForPatient = async (phoneNumber: string) => {
     setSearchingPatient(true);
@@ -326,30 +350,10 @@ export default function AddAppointmentModal({
             </div>
           )}
 
-          {/* Service Selection */}
+          {/* Provider Selection - MOVED FIRST */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Service *
-            </label>
-            <select
-              value={serviceId}
-              onChange={(e) => setServiceId(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              required
-            >
-              <option value="">Select a service</option>
-              {services.map((service) => (
-                <option key={service.id} value={service.id}>
-                  {service.name} ({service.durationMinutes} min)
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Provider Selection */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Doctor/Provider *
+              Service Provider *
             </label>
             
             {providers.length === 0 ? (
@@ -366,7 +370,7 @@ export default function AddAppointmentModal({
                     </h3>
                     <div className="mt-2 text-sm text-yellow-700">
                       <p className="mb-3">
-                        You need to add at least one doctor/provider before creating appointments.
+                        You need to add at least one service provider before creating appointments.
                       </p>
                       <div className="flex gap-3">
                         <a
@@ -406,6 +410,40 @@ export default function AddAppointmentModal({
                   </option>
                 ))}
               </select>
+            )}
+          </div>
+
+          {/* Service Selection - NOW AFTER PROVIDER */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Service *
+              {providerId && filteredServices.length === 0 && (
+                <span className="text-xs text-gray-500 ml-2">
+                  (No services assigned to this provider)
+                </span>
+              )}
+            </label>
+            <select
+              value={serviceId}
+              onChange={(e) => setServiceId(e.target.value)}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              required
+              disabled={!providerId}
+            >
+              <option value="">
+                {providerId ? 'Select a service' : 'Select a provider first'}
+              </option>
+              {services.map((service) => (
+                <option key={service.id} value={service.id}>
+                  {service.name} ({service.durationMinutes} min)
+                  {!service.providerId && ' - Clinic-wide'}
+                </option>
+              ))}
+            </select>
+            {!providerId && (
+              <p className="text-xs text-gray-500 mt-1">
+                Please select a provider to see available services
+              </p>
             )}
           </div>
 

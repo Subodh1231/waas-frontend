@@ -8,10 +8,8 @@ const Sidebar = () => {
   const menuItems = [
     { path: '/chats', label: 'Chats' },
     { path: '/appointments', label: 'Appointments' },
-    { path: '/customers', label: 'Customers' },
+    { path: '/patients', label: 'Patients' },
     { path: '/services', label: 'Services' },
-    { path: '/availability', label: 'Availability' },
-    { path: '/subscription', label: 'Subscription' },
     { path: '/settings', label: 'Settings' },
   ];
 

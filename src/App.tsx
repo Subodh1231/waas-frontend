@@ -14,12 +14,10 @@ const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage'));
 const TermsPage = lazy(() => import('./pages/TermsPage'));
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
 const ChatsPage = lazy(() => import('./pages/ChatsPage'));
-const CustomersPage = lazy(() => import('./pages/CustomersPage'));
+const PatientsPage = lazy(() => import('./pages/PatientsPage'));
 const ServicesPage = lazy(() => import('./pages/ServicesPage'));
-const AvailabilityPage = lazy(() => import('./pages/AvailabilityPage'));
 const AppointmentsPage = lazy(() => import('./pages/AppointmentsPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
-const SubscriptionPage = lazy(() => import('./pages/SubscriptionPage'));
 const WhatsAppCallbackPage = lazy(() => import('./pages/WhatsAppCallbackPage'));
 
 function App() {
@@ -46,11 +44,9 @@ function App() {
             <Route element={<DashboardLayout />}>
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/chats" element={<ChatsPage />} />
-              <Route path="/customers" element={<CustomersPage />} />
+              <Route path="/patients" element={<PatientsPage />} />
               <Route path="/services" element={<ServicesPage />} />
-              <Route path="/availability" element={<AvailabilityPage />} />
               <Route path="/appointments" element={<AppointmentsPage />} />
-              <Route path="/subscription" element={<SubscriptionPage />} />
               <Route path="/settings" element={<SettingsPage />} />
             </Route>
           </Route>

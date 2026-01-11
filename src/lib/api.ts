@@ -22,6 +22,9 @@ export interface ServiceItem {
   providerId?: string;
   tenantId?: string;
   isActive?: boolean;
+  category?: string;
+  bufferMinutes?: number;
+  onlineBookable?: boolean;
 }
 
 export interface DoctorAvailability {
@@ -506,11 +509,22 @@ export const listStaff = async (role?: string, activeOnly: boolean = true): Prom
 };
 
 /**
- * Get doctors only
+ * Get all service providers (doctors, nurses, therapists)
+ */
+export const getServiceProviders = async (): Promise<Staff[]> => {
+  const response = await api.get('/api/staff?activeOnly=true');
+  // Filter to only patient-facing roles
+  const providers = response.data.filter((staff: Staff) => 
+    ['DOCTOR', 'NURSE', 'THERAPIST'].includes(staff.role)
+  );
+  return providers;
+};
+
+/**
+ * @deprecated Use getServiceProviders instead
  */
 export const getDoctors = async (): Promise<Staff[]> => {
-  const response = await api.get('/api/staff/doctors');
-  return response.data;
+  return getServiceProviders();
 };
 
 /**

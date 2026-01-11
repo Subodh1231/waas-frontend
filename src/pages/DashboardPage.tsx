@@ -7,7 +7,7 @@ const DashboardPage = () => {
   const isOnboardingIncomplete = onboardingStatus !== 'COMPLETED';
 
   return (
-    <div className="p-6">
+    <div className="h-screen w-full flex flex-col bg-gray-50 px-8 pt-6">
       {/* Incomplete Onboarding Banner */}
       {isOnboardingIncomplete && (
         <div className="mb-6 bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-lg">
