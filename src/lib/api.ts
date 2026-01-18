@@ -342,6 +342,11 @@ export interface CreateAppointmentRequest {
   durationMinutes?: number;
   notes?: string;
   source?: 'MANUAL' | 'WHATSAPP' | 'ONLINE';
+  payment?: {
+    status?: 'PENDING' | 'PAID' | 'PARTIAL' | 'REFUNDED';
+    mode?: 'CASH' | 'CARD' | 'UPI' | 'ONLINE' | 'INSURANCE';
+    amount?: number;
+  };
 }
 
 export interface AppointmentResponse {

@@ -13,6 +13,10 @@ interface Booking {
   appointmentStatus?: string;
   source?: 'MANUAL' | 'WHATSAPP' | 'ONLINE';
   providerName?: string;
+  paymentStatus?: 'PENDING' | 'PAID' | 'PARTIAL' | 'REFUNDED';
+  paymentMode?: 'CASH' | 'CARD' | 'UPI' | 'ONLINE' | 'INSURANCE';
+  paymentAmount?: number;
+  cancellationReason?: string;
   structuredData?: {
     doctorName?: string;
     phoneNumber?: string;
@@ -34,6 +38,9 @@ const AppointmentsPage = () => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [selectedProvider, setSelectedProvider] = useState<string>('all');
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
   const [stats, setStats] = useState({
     total: 0,
     pending: 0,
@@ -104,17 +111,78 @@ const AppointmentsPage = () => {
     }
   };
 
-  // Cancel booking
-  const cancelBooking = async (bookingId: string) => {
-    if (!confirm('Are you sure you want to cancel this appointment?')) return;
+  // Cancel booking with reason
+  const handleCancelClick = (bookingId: string) => {
+    setSelectedBooking(bookings.find(b => b.id === bookingId) || selectedBooking);
+    setShowCancelModal(true);
+    setCancelReason('');
+  };
+
+  const cancelBooking = async () => {
+    if (!selectedBooking || !cancelReason.trim()) {
+      alert('Please provide a reason for cancellation');
+      return;
+    }
     
     try {
-      await api.delete(`/api/bookings/${bookingId}`);
+      await api.delete(`/api/bookings/${selectedBooking.id}`, {
+        data: { cancellationReason: cancelReason }
+      });
       fetchBookings(); // Refresh data
+      setShowCancelModal(false);
       setSelectedBooking(null);
+      setCancelReason('');
     } catch (error) {
       console.error('Error cancelling booking:', error);
+      alert('Failed to cancel appointment. Please try again.');
     }
+  };
+
+  // Get unique providers from bookings
+  const getUniqueProviders = (): string[] => {
+    const providers = new Set<string>();
+    
+    // Extract from bookingsByDate if in calendar view
+    if (viewMode === 'calendar') {
+      Object.values(bookingsByDate).forEach(dayBookings => {
+        dayBookings.forEach(booking => {
+          const provider = booking.providerName || booking.structuredData?.doctorName || 'Unknown';
+          if (provider && provider !== 'Unknown') {
+            providers.add(provider);
+          }
+        });
+      });
+    } else {
+      // Extract from bookings array in list view
+      bookings.forEach(booking => {
+        const provider = booking.providerName || booking.structuredData?.doctorName || 'Unknown';
+        if (provider && provider !== 'Unknown') {
+          providers.add(provider);
+        }
+      });
+    }
+    
+    return Array.from(providers).sort();
+  };
+
+  // Filter bookings by provider
+  const filterBookingsByProvider = (bookingsList: Booking[]): Booking[] => {
+    if (selectedProvider === 'all') return bookingsList;
+    return bookingsList.filter(booking => {
+      const provider = booking.providerName || booking.structuredData?.doctorName || 'Unknown';
+      return provider === selectedProvider;
+    });
+  };
+
+  // Filter bookings by date for provider
+  const getFilteredBookingsByDate = (): Record<string, Booking[]> => {
+    if (selectedProvider === 'all') return bookingsByDate;
+    
+    const filtered: Record<string, Booking[]> = {};
+    Object.keys(bookingsByDate).forEach(date => {
+      filtered[date] = filterBookingsByProvider(bookingsByDate[date]);
+    });
+    return filtered;
   };
 
   // Week Calendar rendering
@@ -122,6 +190,7 @@ const AppointmentsPage = () => {
     const weekStart = startOfWeek(currentWeek);
     const weekEnd = endOfWeek(currentWeek);
     const weekDays = eachDayOfInterval({ start: weekStart, end: weekEnd });
+    const filteredBookingsByDate = getFilteredBookingsByDate();
 
     return (
       <div className="bg-white rounded-lg shadow h-full flex flex-col">
@@ -157,7 +226,7 @@ const AppointmentsPage = () => {
           <div className="grid grid-cols-7 gap-2 h-full">
             {weekDays.map((day) => {
               const dateKey = format(day, 'yyyy-MM-dd');
-              const dayBookings = bookingsByDate[dateKey] || [];
+              const dayBookings = filteredBookingsByDate[dateKey] || [];
               const isTodayDate = isToday(day);
 
               return (
@@ -202,6 +271,9 @@ const AppointmentsPage = () => {
                           >
                             <div className="font-semibold mb-1">
                               {format(new Date(booking.dateTime), 'HH:mm')}
+                              {booking.paymentStatus === 'PAID' && (
+                                <span className="ml-1 text-[10px]">💰</span>
+                              )}
                             </div>
                             <div className="truncate">{booking.customerName}</div>
                             <div className="text-[10px] opacity-75 truncate mt-1">
@@ -228,6 +300,7 @@ const AppointmentsPage = () => {
     const startDate = startOfWeek(monthStart);
     const endDate = endOfWeek(monthEnd);
     const dateRange = eachDayOfInterval({ start: startDate, end: endDate });
+    const filteredBookingsByDate = getFilteredBookingsByDate();
 
     const weeks: Date[][] = [];
     for (let i = 0; i < dateRange.length; i += 7) {
@@ -279,7 +352,7 @@ const AppointmentsPage = () => {
             <div key={weekIdx} className="grid grid-cols-7 gap-1">
               {week.map((day) => {
                 const dateKey = format(day, 'yyyy-MM-dd');
-                const dayBookings = bookingsByDate[dateKey] || [];
+                const dayBookings = filteredBookingsByDate[dateKey] || [];
                 const isCurrentMonth = isSameMonth(day, currentMonth);
                 const isTodayDate = isToday(day);
 
@@ -360,9 +433,9 @@ const AppointmentsPage = () => {
               </button>
             </div>
             
-            {bookingsByDate[format(selectedDate, 'yyyy-MM-dd')]?.length > 0 ? (
+            {filteredBookingsByDate[format(selectedDate, 'yyyy-MM-dd')]?.length > 0 ? (
               <div className="space-y-2 max-h-60 overflow-y-auto">
-                {bookingsByDate[format(selectedDate, 'yyyy-MM-dd')].map((booking) => (
+                {filteredBookingsByDate[format(selectedDate, 'yyyy-MM-dd')].map((booking) => (
                   <div
                     key={booking.id}
                     onClick={() => setSelectedBooking(booking)}
@@ -402,17 +475,19 @@ const AppointmentsPage = () => {
 
   // List view rendering
   const renderListView = () => {
-    const todayBookings = bookings.filter(b => {
+    const filteredBookings = filterBookingsByProvider(bookings);
+    
+    const todayBookings = filteredBookings.filter(b => {
       const bookingDate = new Date(b.dateTime);
       return isToday(bookingDate) && b.status !== 'CANCELLED';
     });
 
-    const upcomingBookings = bookings.filter(b => {
+    const upcomingBookings = filteredBookings.filter(b => {
       const bookingDate = new Date(b.dateTime);
       return bookingDate > new Date() && !isToday(bookingDate) && b.status !== 'CANCELLED';
     });
 
-    const pastBookings = bookings.filter(b => {
+    const pastBookings = filteredBookings.filter(b => {
       const bookingDate = new Date(b.dateTime);
       return bookingDate < new Date() && !isToday(bookingDate);
     });
@@ -566,6 +641,26 @@ const AppointmentsPage = () => {
           </>
         )}
       </div>
+      
+      {/* Provider Filter */}
+      <div className="flex items-center gap-3 mb-6">
+        <label htmlFor="provider-filter" className="text-sm font-medium text-gray-700">
+          Filter by Provider:
+        </label>
+        <select
+          id="provider-filter"
+          value={selectedProvider}
+          onChange={(e) => setSelectedProvider(e.target.value)}
+          className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+        >
+          <option value="all">All Staff ({getUniqueProviders().length} provider{getUniqueProviders().length !== 1 ? 's' : ''})</option>
+          {getUniqueProviders().map((provider) => (
+            <option key={provider} value={provider}>
+              {provider}
+            </option>
+          ))}
+        </select>
+      </div>
       </div>
 
       {/* Content */}
@@ -582,13 +677,62 @@ const AppointmentsPage = () => {
       )}
 
       {/* Booking Detail Modal */}
-      {selectedBooking && (
+      {selectedBooking && !showCancelModal && (
         <BookingDetailModal
           booking={selectedBooking}
           onClose={() => setSelectedBooking(null)}
           onUpdateStatus={updateBookingStatus}
-          onCancel={cancelBooking}
+          onCancel={handleCancelClick}
         />
+      )}
+
+      {/* Cancel Reason Modal */}
+      {showCancelModal && selectedBooking && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+            <div className="px-6 py-4 border-b">
+              <h2 className="text-xl font-semibold text-gray-800">Cancel Appointment</h2>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <p className="text-sm text-gray-600 mb-2">Patient: <span className="font-semibold">{selectedBooking.customerName}</span></p>
+                <p className="text-sm text-gray-600">Date: <span className="font-semibold">{format(new Date(selectedBooking.dateTime), 'MMM d, yyyy • h:mm a')}</span></p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Reason for Cancellation <span className="text-red-600">*</span>
+                </label>
+                <textarea
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  rows={4}
+                  placeholder="e.g., Patient requested reschedule, Emergency, Doctor unavailable..."
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-1">This reason will be saved for future communication with the patient.</p>
+              </div>
+            </div>
+            <div className="px-6 py-4 border-t bg-gray-50 flex gap-2 justify-end">
+              <button
+                onClick={() => {
+                  setShowCancelModal(false);
+                  setCancelReason('');
+                }}
+                className="px-4 py-2 bg-white text-gray-700 rounded hover:bg-gray-100 border font-medium"
+              >
+                Go Back
+              </button>
+              <button
+                onClick={cancelBooking}
+                disabled={!cancelReason.trim()}
+                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 font-medium disabled:bg-gray-400 disabled:cursor-not-allowed"
+              >
+                Cancel Appointment
+              </button>
+            </div>
+          </div>
+        </div>
       )}
       </div>
 
@@ -665,6 +809,17 @@ const BookingRow = ({ booking, onSelect }: { booking: Booking; onSelect: () => v
               {booking.status}
             </span>
             {getSourceBadge(booking.source)}
+            {booking.paymentStatus && (
+              <span className={`
+                px-2 py-1 text-xs font-medium rounded
+                ${booking.paymentStatus === 'PAID' ? 'bg-green-100 text-green-800' : ''}
+                ${booking.paymentStatus === 'PENDING' ? 'bg-yellow-100 text-yellow-800' : ''}
+                ${booking.paymentStatus === 'PARTIAL' ? 'bg-orange-100 text-orange-800' : ''}
+                ${booking.paymentStatus === 'REFUNDED' ? 'bg-gray-100 text-gray-800' : ''}
+              `}>
+                💰 {booking.paymentStatus}
+              </span>
+            )}
           </div>
           <p className="text-lg font-medium text-gray-700 mt-1">{booking.customerName}</p>
           <p className="text-sm text-gray-600">{booking.serviceName}</p>
@@ -692,6 +847,31 @@ const BookingDetailModal = ({
   onUpdateStatus: (id: string, status: string) => void;
   onCancel: (id: string) => void;
 }) => {
+  const [editingPayment, setEditingPayment] = useState(false);
+  const [paymentStatus, setPaymentStatus] = useState(booking.paymentStatus || 'PENDING');
+  const [paymentMode, setPaymentMode] = useState(booking.paymentMode || 'CASH');
+  const [paymentAmount, setPaymentAmount] = useState(booking.paymentAmount?.toString() || '');
+
+  const handleUpdatePayment = async () => {
+    try {
+      const response = await api.patch(`/api/appointments/${booking.id}/payment`, {
+        paymentStatus,
+        paymentMode,
+        paymentAmount: paymentAmount ? parseFloat(paymentAmount) : null
+      });
+      
+      if (response.data) {
+        setEditingPayment(false);
+        // Refresh the page or show success message
+        window.location.reload();
+      }
+    } catch (error: any) {
+      console.error('Error updating payment:', error);
+      const errorMsg = error.response?.data?.message || 'Failed to update payment information';
+      alert(errorMsg);
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
@@ -764,6 +944,102 @@ const BookingDetailModal = ({
             <div>
               <p className="text-sm text-gray-600 mb-1">Notes</p>
               <p className="text-gray-800">{booking.structuredData.notes}</p>
+            </div>
+          )}
+
+          {/* Payment Status */}
+          <div className="border-t pt-4">
+            <div className="flex justify-between items-center mb-3">
+              <p className="text-sm font-semibold text-gray-700">Payment Information</p>
+              <button
+                onClick={() => setEditingPayment(!editingPayment)}
+                className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+              >
+                {editingPayment ? 'Cancel Edit' : 'Edit Payment'}
+              </button>
+            </div>
+            
+            {!editingPayment ? (
+              <div className="flex items-center gap-3 flex-wrap">
+                <span className={`
+                  px-3 py-1 text-sm font-medium rounded
+                  ${paymentStatus === 'PAID' ? 'bg-green-100 text-green-800' : ''}
+                  ${paymentStatus === 'PENDING' ? 'bg-yellow-100 text-yellow-800' : ''}
+                  ${paymentStatus === 'PARTIAL' ? 'bg-orange-100 text-orange-800' : ''}
+                  ${paymentStatus === 'REFUNDED' ? 'bg-gray-100 text-gray-800' : ''}
+                `}>
+                  {paymentStatus}
+                </span>
+                {paymentMode && (
+                  <span className="text-sm text-gray-600">
+                    via <span className="font-semibold">{paymentMode}</span>
+                  </span>
+                )}
+                {paymentAmount && (
+                  <span className="text-sm font-semibold text-gray-800">
+                    ₹{paymentAmount}
+                  </span>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Status</label>
+                    <select
+                      value={paymentStatus}
+                      onChange={(e) => setPaymentStatus(e.target.value as any)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="PENDING">Pending</option>
+                      <option value="PAID">Paid</option>
+                      <option value="PARTIAL">Partial</option>
+                      <option value="REFUNDED">Refunded</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Mode</label>
+                    <select
+                      value={paymentMode}
+                      onChange={(e) => setPaymentMode(e.target.value as any)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="CASH">Cash</option>
+                      <option value="CARD">Card</option>
+                      <option value="UPI">UPI</option>
+                      <option value="ONLINE">Online</option>
+                      <option value="INSURANCE">Insurance</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Amount (₹)</label>
+                    <input
+                      type="number"
+                      value={paymentAmount}
+                      onChange={(e) => setPaymentAmount(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500"
+                      placeholder="0"
+                      min="0"
+                    />
+                  </div>
+                </div>
+                <button
+                  onClick={handleUpdatePayment}
+                  className="px-4 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 font-medium"
+                >
+                  Save Payment Info
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Cancellation Reason */}
+          {booking.cancellationReason && (
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Cancellation Reason</p>
+              <p className="text-gray-800 bg-red-50 p-3 rounded border border-red-200">
+                {booking.cancellationReason}
+              </p>
             </div>
           )}
 

@@ -51,6 +51,11 @@ export default function AddAppointmentModal({
   );
   const [time, setTime] = useState(defaultTime || '');
   const [notes, setNotes] = useState('');
+  
+  // Payment state
+  const [paymentStatus, setPaymentStatus] = useState<'PENDING' | 'PAID' | 'PARTIAL' | 'REFUNDED'>('PENDING');
+  const [paymentMode, setPaymentMode] = useState<'CASH' | 'CARD' | 'UPI' | 'ONLINE' | 'INSURANCE'>('CASH');
+  const [paymentAmount, setPaymentAmount] = useState('');
 
   // UI state
   const [checkingAvailability, setCheckingAvailability] = useState(false);
@@ -225,6 +230,11 @@ export default function AddAppointmentModal({
       durationMinutes: selectedService?.durationMinutes,
       notes: notes || undefined,
       source: 'MANUAL',
+      payment: {
+        status: paymentStatus,
+        mode: paymentMode,
+        amount: paymentAmount ? parseFloat(paymentAmount) : undefined,
+      },
     };
 
     setSubmitting(true);
@@ -248,6 +258,9 @@ export default function AddAppointmentModal({
     setPatientEmail('');
     setServiceId('');
     setProviderId('');
+    setPaymentStatus('PENDING');
+    setPaymentMode('CASH');
+    setPaymentAmount('');
     setProviderName('');
     setDate('');
     setTime('');
@@ -535,6 +548,61 @@ export default function AddAppointmentModal({
               </div>
             </div>
           )}
+
+          {/* Payment Details */}
+          <div className="border-t pt-4 space-y-4">
+            <h3 className="text-sm font-semibold text-gray-700">Payment Information</h3>
+            
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Payment Status *
+                </label>
+                <select
+                  value={paymentStatus}
+                  onChange={(e) => setPaymentStatus(e.target.value as any)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="PENDING">Pending</option>
+                  <option value="PAID">Paid</option>
+                  <option value="PARTIAL">Partial</option>
+                  <option value="REFUNDED">Refunded</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Payment Mode
+                </label>
+                <select
+                  value={paymentMode}
+                  onChange={(e) => setPaymentMode(e.target.value as any)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="CASH">Cash</option>
+                  <option value="CARD">Card</option>
+                  <option value="UPI">UPI</option>
+                  <option value="ONLINE">Online</option>
+                  <option value="INSURANCE">Insurance</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Amount (₹)
+                </label>
+                <input
+                  type="number"
+                  value={paymentAmount}
+                  onChange={(e) => setPaymentAmount(e.target.value)}
+                  placeholder="0"
+                  min="0"
+                  step="1"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+          </div>
 
           {/* Notes */}
           <div>
