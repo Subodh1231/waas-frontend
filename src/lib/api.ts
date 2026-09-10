@@ -692,5 +692,96 @@ export const unassignServiceFromProvider = async (serviceId: string): Promise<Se
   return response.data;
 };
 
+// ============================================
+// PUBLIC PATIENT BOOKING API (no auth required)
+// ============================================
+
+export interface PublicDoctor {
+  id: string;
+  name: string;
+  qualifications?: string;
+  specialization?: string;
+}
+
+export interface PublicService {
+  id: string;
+  providerId?: string | null;
+  name: string;
+  description?: string;
+  price?: number;
+  durationMinutes?: number;
+}
+
+export interface PublicClinic {
+  slug: string;
+  name: string;
+  logoUrl?: string;
+  address?: string;
+  phone?: string;
+  specialization?: string;
+  doctors: PublicDoctor[];
+  services: PublicService[];
+}
+
+export interface PublicSlots {
+  doctorId: string;
+  doctorName: string;
+  date: string;
+  slots: string[]; // "HH:mm:ss"
+  scheduleConfigured?: boolean;
+}
+
+export interface PublicBookingRequest {
+  doctorId: string;
+  serviceId: string;
+  date: string; // YYYY-MM-DD
+  time: string; // HH:mm
+  patientName: string;
+  patientPhone: string;
+}
+
+export interface PublicBookingConfirmation {
+  bookingId: string;
+  clinicName: string;
+  doctorName: string;
+  serviceName: string;
+  date: string;
+  time: string;
+  status: string;
+}
+
+/**
+ * Get a clinic's public profile (name, logo, doctors, services) by its booking-page slug.
+ */
+export const getPublicClinic = async (slug: string): Promise<PublicClinic> => {
+  const response = await api.get(`/api/public/clinics/${slug}`);
+  return response.data;
+};
+
+/**
+ * Get a doctor's available slots for a given date on the public booking page.
+ */
+export const getPublicSlots = async (
+  slug: string,
+  doctorId: string,
+  date: string
+): Promise<PublicSlots> => {
+  const response = await api.get(`/api/public/clinics/${slug}/slots`, {
+    params: { doctorId, date },
+  });
+  return response.data;
+};
+
+/**
+ * Create a patient self-service booking (no login required).
+ */
+export const createPublicBooking = async (
+  slug: string,
+  request: PublicBookingRequest
+): Promise<PublicBookingConfirmation> => {
+  const response = await api.post(`/api/public/clinics/${slug}/bookings`, request);
+  return response.data;
+};
+
 // Export the configured axios instance as default
 export default api;

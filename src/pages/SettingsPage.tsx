@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Settings, Building2, Clock, DollarSign, Bell, CreditCard, Globe, Users } from 'lucide-react';
+import { Settings, Building2, Clock, DollarSign, Bell, CreditCard, Globe, Users, QrCode } from 'lucide-react';
+import { QRCodeCanvas } from 'qrcode.react';
 import api from '../lib/api';
 import WhatsAppSettingsTab from '../components/WhatsAppSettingsTab';
 import StaffManagementTab from '../components/StaffManagementTab';
@@ -22,6 +23,7 @@ interface Tenant {
   address?: string;
   specialization?: string;
   logoUrl?: string;
+  slug?: string;
   timezone?: string;
   currency?: string;
   active: boolean;
@@ -115,6 +117,25 @@ const SettingsPage = () => {
   
   const [saving, setSaving] = useState<Record<string, boolean>>({});
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  const bookingPageUrl = tenant?.slug ? `${window.location.origin}/c/${tenant.slug}` : '';
+
+  const copyBookingUrl = async () => {
+    if (!bookingPageUrl) return;
+    await navigator.clipboard.writeText(bookingPageUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const downloadQrCode = () => {
+    const canvas = document.getElementById('booking-qr-canvas') as HTMLCanvasElement | null;
+    if (!canvas) return;
+    const link = document.createElement('a');
+    link.download = `${tenant?.slug || 'clinic'}-booking-qr.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  };
 
   useEffect(() => {
     fetchTenantData();
@@ -307,6 +328,18 @@ const SettingsPage = () => {
               >
                 <Building2 className="w-5 h-5" />
                 <span>Clinic Profile</span>
+              </button>
+
+              <button
+                onClick={() => setActiveSection('booking-page')}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
+                  activeSection === 'booking-page'
+                    ? 'bg-blue-50 text-blue-700 font-medium'
+                    : 'text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                <QrCode className="w-5 h-5" />
+                <span>Booking Page</span>
               </button>
               
               <button
@@ -506,6 +539,64 @@ const SettingsPage = () => {
                   </button>
                 </div>
               </form>
+            </div>
+          )}
+
+          {/* Booking Page Section */}
+          {activeSection === 'booking-page' && (
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center gap-3 mb-6">
+                <QrCode className="w-6 h-6 text-blue-600" />
+                <h2 className="text-2xl font-bold text-gray-900">Patient Booking Page</h2>
+              </div>
+
+              {tenant?.slug ? (
+                <div className="space-y-6">
+                  <p className="text-gray-600">
+                    Share this link or QR code so patients can book an appointment directly - no app required.
+                  </p>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Booking page URL</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        readOnly
+                        value={bookingPageUrl}
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-sm"
+                      />
+                      <button
+                        onClick={copyBookingUrl}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                      >
+                        {copied ? 'Copied!' : 'Copy'}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">QR code</label>
+                    <div className="inline-block p-4 bg-white border border-gray-200 rounded-lg">
+                      <QRCodeCanvas id="booking-qr-canvas" value={bookingPageUrl} size={200} />
+                    </div>
+                    <div>
+                      <button
+                        onClick={downloadQrCode}
+                        className="mt-3 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm"
+                      >
+                        Download QR Code
+                      </button>
+                    </div>
+                    <p className="mt-2 text-sm text-gray-500">
+                      Print this at reception, in the waiting room, or on prescriptions - scanning it opens your booking page directly.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-gray-600">
+                  Complete clinic onboarding to get your public booking page and QR code.
+                </p>
+              )}
             </div>
           )}
 
