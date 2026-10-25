@@ -4,7 +4,6 @@ import {
   Calendar,
   Check,
   ClipboardCheck,
-  Clock3,
   QrCode,
   Stethoscope,
   Users,
