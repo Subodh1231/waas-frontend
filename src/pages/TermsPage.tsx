@@ -27,14 +27,14 @@ const TermsPage = () => {
       {/* Content */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <h1 className="text-4xl font-bold text-gray-900 mb-2">Terms of Service</h1>
-        <p className="text-gray-600 mb-8">Last updated: December 18, 2025</p>
+        <p className="text-gray-600 mb-8">Last updated: October 21, 2026</p>
 
         <div className="bg-white rounded-lg shadow-sm p-8 space-y-8">
           {/* Agreement */}
           <section>
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">1. Agreement to Terms</h2>
             <p className="text-gray-700 leading-relaxed">
-              By accessing or using Bookzi's WhatsApp-based appointment booking system ("Service"), you agree to be bound by these 
+              By accessing or using Bookzi's clinic appointment and online booking platform ("Service"), you agree to be bound by these 
               Terms of Service. If you disagree with any part of these terms, you may not access the Service.
             </p>
           </section>
@@ -43,14 +43,13 @@ const TermsPage = () => {
           <section>
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">2. Service Description</h2>
             <p className="text-gray-700 leading-relaxed mb-3">
-              Bookzi provides a SaaS platform that enables healthcare clinics to:
+              Bookzi provides a platform that enables healthcare clinics to:
             </p>
             <ul className="list-disc list-inside text-gray-700 space-y-2 ml-4">
-              <li>Accept patient appointments via WhatsApp</li>
-              <li>Manage schedules and availability</li>
-              <li>Send automated appointment reminders</li>
-              <li>Utilize AI-powered appointment assistance</li>
-              <li>Manage patient information and communications</li>
+              <li>Publish a clinic-specific online booking page and share it by URL or QR code</li>
+              <li>Allow patients to submit appointment bookings through the online booking flow</li>
+              <li>Manage clinic appointments, schedules, services, and availability</li>
+              <li>Maintain patient records related to appointment operations</li>
             </ul>
           </section>
 
@@ -58,12 +57,10 @@ const TermsPage = () => {
           <section>
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">3. Free Trial and Subscription</h2>
             <p className="text-gray-700 leading-relaxed mb-3">
-              <strong>Free Trial:</strong> New users receive a 30-day free trial. No credit card is required to start the trial. 
-              The trial includes full access to all features.
+              <strong>Free Trial:</strong> Where enabled, new accounts receive a trial period. The current default is 14 days, and no credit card is required to start. Trial duration, usage limits, and available features may depend on the active trial configuration and will be presented in the product.
             </p>
             <p className="text-gray-700 leading-relaxed">
-              <strong>Subscription:</strong> After the trial period, continued use requires a paid subscription. We will notify 
-              you before the trial ends. Subscriptions auto-renew unless cancelled.
+              <strong>Subscription:</strong> Any paid plan, pricing, billing cycle, renewal, and cancellation terms will be shown when a paid subscription is made available for purchase. Do not assume a plan renews automatically unless that is stated in the applicable checkout terms.
             </p>
           </section>
 
@@ -99,7 +96,7 @@ const TermsPage = () => {
           <section>
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">6. WhatsApp Business Integration</h2>
             <p className="text-gray-700 leading-relaxed mb-3">
-              Use of WhatsApp integration is subject to:
+              WhatsApp-based booking and automated messaging are not currently generally available in Bookzi. If these features are offered in the future, their availability and applicable terms will be communicated before use. Any future WhatsApp integration will also be subject to:
             </p>
             <ul className="list-disc list-inside text-gray-700 space-y-2 ml-4">
               <li>WhatsApp Business Terms of Service</li>

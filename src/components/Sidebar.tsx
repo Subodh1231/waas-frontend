@@ -11,6 +11,7 @@ const Sidebar = () => {
     { path: '/patients', label: 'Patients' },
     { path: '/services', label: 'Services' },
     { path: '/settings', label: 'Settings' },
+    { path: '/help', label: 'Help' },
   ];
 
   const handleLogout = () => {

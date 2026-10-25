@@ -20,6 +20,11 @@ const AppointmentsPage = lazy(() => import('./pages/AppointmentsPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const WhatsAppCallbackPage = lazy(() => import('./pages/WhatsAppCallbackPage'));
 const PublicClinicPage = lazy(() => import('./pages/PublicClinicPage'));
+const HelpCenterPage = lazy(() => import('./pages/HelpCenterPage'));
+const HelpGettingStartedPage = lazy(() => import('./pages/HelpGettingStartedPage'));
+const HelpReceptionistPage = lazy(() => import('./pages/HelpReceptionistPage'));
+const HelpPatientBookingPage = lazy(() => import('./pages/HelpPatientBookingPage'));
+const HelpAppointmentsPage = lazy(() => import('./pages/HelpAppointmentsPage'));
 
 function App() {
   return (
@@ -33,6 +38,11 @@ function App() {
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
           <Route path="/terms" element={<TermsPage />} />
+          <Route path="/help" element={<HelpCenterPage />} />
+          <Route path="/help/getting-started" element={<HelpGettingStartedPage />} />
+          <Route path="/help/receptionist" element={<HelpReceptionistPage />} />
+          <Route path="/help/patient-booking" element={<HelpPatientBookingPage />} />
+          <Route path="/help/appointments" element={<HelpAppointmentsPage />} />
 
           {/* Public patient booking page - bookzi.in/c/{slug} */}
           <Route path="/c/:slug" element={<PublicClinicPage />} />
