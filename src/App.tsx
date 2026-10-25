@@ -13,7 +13,6 @@ const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'));
 const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage'));
 const TermsPage = lazy(() => import('./pages/TermsPage'));
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
-const ChatsPage = lazy(() => import('./pages/ChatsPage'));
 const PatientsPage = lazy(() => import('./pages/PatientsPage'));
 const ServicesPage = lazy(() => import('./pages/ServicesPage'));
 const AppointmentsPage = lazy(() => import('./pages/AppointmentsPage'));
@@ -55,9 +54,9 @@ function App() {
 
           {/* Protected routes with Dashboard Layout */}
           <Route element={<ProtectedRoute />}>
+            <Route path="/chats" element={<Navigate to="/dashboard" replace />} />
             <Route element={<DashboardLayout />}>
               <Route path="/dashboard" element={<DashboardPage />} />
-              <Route path="/chats" element={<ChatsPage />} />
               <Route path="/patients" element={<PatientsPage />} />
               <Route path="/services" element={<ServicesPage />} />
               <Route path="/appointments" element={<AppointmentsPage />} />

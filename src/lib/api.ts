@@ -730,6 +730,7 @@ export interface PublicSlots {
   date: string;
   slots: string[]; // "HH:mm:ss"
   scheduleConfigured?: boolean;
+  scheduledForDate?: boolean;
 }
 
 export interface PublicBookingRequest {

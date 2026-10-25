@@ -22,6 +22,9 @@ const todayISO = (timeZone?: string) => {
   return `${part('year')}-${part('month')}-${part('day')}`;
 };
 
+const weekdayName = (date: string) =>
+  new Date(`${date}T12:00:00Z`).toLocaleDateString('en-US', { weekday: 'long', timeZone: 'UTC' });
+
 const PublicClinicPage = () => {
   const { slug } = useParams<{ slug: string }>();
 
@@ -34,6 +37,7 @@ const PublicClinicPage = () => {
   const [date, setDate] = useState(todayISO());
   const [slots, setSlots] = useState<string[]>([]);
   const [scheduleConfigured, setScheduleConfigured] = useState(true);
+  const [scheduledForDate, setScheduledForDate] = useState(true);
   const [slotsLoading, setSlotsLoading] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
 
@@ -72,6 +76,7 @@ const PublicClinicPage = () => {
         if (cancelled) return;
         setSlots(data.slots);
         setScheduleConfigured(data.scheduleConfigured !== false);
+        setScheduledForDate(data.scheduledForDate !== false);
       })
       .catch(() => {
         if (!cancelled) setSlots([]);
@@ -278,8 +283,16 @@ const PublicClinicPage = () => {
                     <> Please call <a href={`tel:${clinic.phone}`} className="text-blue-600 font-medium">{clinic.phone}</a> to book.</>
                   )}
                 </div>
+              ) : !scheduledForDate ? (
+                <div className="text-sm text-gray-600 bg-amber-50 border border-amber-200 rounded-lg p-3">
+                  {selectedDoctor.name} has no working hours set for {weekdayName(date)}. Choose another date or contact the clinic.
+                </div>
               ) : slots.length === 0 ? (
-                <p className="text-sm text-gray-500">No slots available on this date. Try another date.</p>
+                <p className="text-sm text-gray-500">
+                  {date === todayISO(clinic.timezone)
+                    ? 'No upcoming slots remain today. The available times may have passed or already been booked.'
+                    : 'No available slots on this date. The schedule may be blocked or all times may be booked. Try another date.'}
+                </p>
               ) : (
                 <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                   {slots.map((slot) => (
