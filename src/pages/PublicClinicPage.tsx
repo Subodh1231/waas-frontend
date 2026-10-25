@@ -11,7 +11,16 @@ import {
   type PublicBookingConfirmation,
 } from '../lib/api';
 
-const todayISO = () => new Date().toISOString().split('T')[0];
+const todayISO = (timeZone?: string) => {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: timeZone || Intl.DateTimeFormat().resolvedOptions().timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date());
+  const part = (type: string) => parts.find((value) => value.type === type)?.value || '';
+  return `${part('year')}-${part('month')}-${part('day')}`;
+};
 
 const PublicClinicPage = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -39,6 +48,7 @@ const PublicClinicPage = () => {
     getPublicClinic(slug)
       .then((data) => {
         setClinic(data);
+        setDate(todayISO(data.timezone));
         if (data.doctors.length === 1) setSelectedDoctor(data.doctors[0]);
         if (data.services.length === 1) setSelectedService(data.services[0]);
       })
@@ -47,20 +57,33 @@ const PublicClinicPage = () => {
   }, [slug]);
 
   useEffect(() => {
-    if (!slug || !selectedDoctor) {
+    if (!slug || !selectedDoctor || !selectedService) {
       setSlots([]);
+      setSelectedSlot(null);
+      setSlotsLoading(false);
       return;
     }
+
+    let cancelled = false;
     setSlotsLoading(true);
     setSelectedSlot(null);
-    getPublicSlots(slug, selectedDoctor.id, date)
+    getPublicSlots(slug, selectedDoctor.id, date, selectedService.id)
       .then((data) => {
+        if (cancelled) return;
         setSlots(data.slots);
         setScheduleConfigured(data.scheduleConfigured !== false);
       })
-      .catch(() => setSlots([]))
-      .finally(() => setSlotsLoading(false));
-  }, [slug, selectedDoctor, date]);
+      .catch(() => {
+        if (!cancelled) setSlots([]);
+      })
+      .finally(() => {
+        if (!cancelled) setSlotsLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [slug, selectedDoctor, selectedService, date]);
 
   // Services visible for the selected doctor: clinic-wide (no providerId) + doctor-specific
   const availableServices = clinic
@@ -236,7 +259,7 @@ const PublicClinicPage = () => {
                 <input
                   type="date"
                   value={date}
-                  min={todayISO()}
+                  min={todayISO(clinic.timezone)}
                   onChange={(e) => setDate(e.target.value)}
                   className="w-full sm:w-auto px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
@@ -244,6 +267,8 @@ const PublicClinicPage = () => {
 
               {!selectedDoctor ? (
                 <p className="text-sm text-gray-500">Select a doctor to see available times.</p>
+              ) : !selectedService ? (
+                <p className="text-sm text-gray-500">Select a service to see matching available times.</p>
               ) : slotsLoading ? (
                 <p className="text-sm text-gray-500">Loading available times...</p>
               ) : !scheduleConfigured ? (

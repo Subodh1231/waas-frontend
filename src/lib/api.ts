@@ -715,6 +715,7 @@ export interface PublicService {
 export interface PublicClinic {
   slug: string;
   name: string;
+  timezone?: string;
   logoUrl?: string;
   address?: string;
   phone?: string;
@@ -764,10 +765,11 @@ export const getPublicClinic = async (slug: string): Promise<PublicClinic> => {
 export const getPublicSlots = async (
   slug: string,
   doctorId: string,
-  date: string
+  date: string,
+  serviceId?: string
 ): Promise<PublicSlots> => {
   const response = await api.get(`/api/public/clinics/${slug}/slots`, {
-    params: { doctorId, date },
+    params: { doctorId, date, serviceId },
   });
   return response.data;
 };

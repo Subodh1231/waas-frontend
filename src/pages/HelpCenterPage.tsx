@@ -11,6 +11,7 @@ import {
   Stethoscope,
   Users,
 } from 'lucide-react';
+import { getAuthToken } from '../lib/auth';
 
 const helpCards = [
   {
@@ -53,6 +54,7 @@ const helpCards = [
 
 const HelpCenterPage = () => {
   const [search, setSearch] = useState('');
+  const hasSession = Boolean(getAuthToken());
 
   const filteredCards = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -66,6 +68,14 @@ const HelpCenterPage = () => {
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
       <div className="max-w-6xl mx-auto px-4 py-10 sm:px-6 lg:px-8">
+        <div className="mb-4 flex justify-end">
+          <Link
+            to={hasSession ? '/dashboard' : '/'}
+            className="text-sm font-medium text-blue-600 hover:text-blue-700"
+          >
+            {hasSession ? 'Back to Bookzi dashboard' : 'Back to Bookzi home'}
+          </Link>
+        </div>
         <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 sm:p-8">
           <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
             <div>
