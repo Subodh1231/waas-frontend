@@ -7,6 +7,7 @@ const Sidebar = () => {
 
   const menuItems = [
     { path: '/appointments', label: 'Appointments' },
+    { path: '/invoices', label: 'Invoices' },
     { path: '/patients', label: 'Patients' },
     { path: '/services', label: 'Services' },
     { path: '/settings', label: 'Settings' },
@@ -31,7 +32,7 @@ const Sidebar = () => {
             key={item.path}
             to={item.path}
             label={item.label}
-            active={location.pathname === item.path}
+            active={location.pathname === item.path || (item.path === '/invoices' && location.pathname.startsWith('/invoices/'))}
           />
         ))}
       </nav>

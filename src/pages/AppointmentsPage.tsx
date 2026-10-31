@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, startOfWeek, endOfWeek, isToday } from 'date-fns';
 import { Plus } from 'lucide-react';
 import api from '../lib/api';
@@ -847,10 +848,32 @@ const BookingDetailModal = ({
   onUpdateStatus: (id: string, status: string) => void;
   onCancel: (id: string) => void;
 }) => {
+  const navigate = useNavigate();
+  const isCompleted = booking.status === 'COMPLETED' || booking.appointmentStatus === 'COMPLETED';
+  const [existingInvoiceId, setExistingInvoiceId] = useState<string | null>(null);
   const [editingPayment, setEditingPayment] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState(booking.paymentStatus || 'PENDING');
   const [paymentMode, setPaymentMode] = useState(booking.paymentMode || 'CASH');
   const [paymentAmount, setPaymentAmount] = useState(booking.paymentAmount?.toString() || '');
+
+  useEffect(() => {
+    let active = true;
+    setExistingInvoiceId(null);
+    if (!isCompleted) return () => { active = false; };
+    api.get(`/api/invoices/appointments/${booking.id}`)
+      .then((response) => {
+        if (active) setExistingInvoiceId(response.data.id);
+      })
+      .catch((error) => {
+        if (active) {
+          if (error.response?.status !== 404) {
+            console.error('Could not check for an existing invoice:', error);
+          }
+          setExistingInvoiceId(null);
+        }
+      });
+    return () => { active = false; };
+  }, [booking.id, isCompleted]);
 
   const handleUpdatePayment = async () => {
     try {
@@ -1052,6 +1075,16 @@ const BookingDetailModal = ({
 
         {/* Modal Actions */}
         <div className="px-6 py-4 border-t bg-gray-50 flex gap-2 justify-end sticky bottom-0">
+          {isCompleted && (
+            <button
+              onClick={() => navigate(existingInvoiceId
+                ? `/invoices/${existingInvoiceId}`
+                : `/invoices?appointmentId=${booking.id}`)}
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium"
+            >
+              {existingInvoiceId ? 'View Invoice' : 'Generate Invoice'}
+            </button>
+          )}
           {booking.status === 'PENDING' && (
             <button
               onClick={() => onUpdateStatus(booking.id, 'CONFIRMED')}

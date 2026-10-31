@@ -403,6 +403,117 @@ export interface AppointmentFilters {
   size?: number;
 }
 
+export interface InvoiceLine {
+  id: string;
+  serviceId?: string | null;
+  lineNumber: number;
+  description: string;
+  quantity: string | number;
+  unitPrice: string | number;
+  lineTotal: string | number;
+}
+
+export interface Invoice {
+  id: string;
+  appointmentId: string;
+  patientId?: string | null;
+  invoiceNumber: string;
+  invoiceDate: string;
+  appointmentDate: string;
+  currency: string;
+  clinicName: string;
+  clinicAddress?: string | null;
+  clinicPhone?: string | null;
+  clinicLogoUrl?: string | null;
+  patientName: string;
+  patientPhone?: string | null;
+  providerName?: string | null;
+  subtotal: string | number;
+  discountAmount: string | number;
+  taxAmount: string | number;
+  totalAmount: string | number;
+  paymentStatus: 'UNPAID' | 'PAID';
+  paymentMethod?: 'CASH' | 'UPI' | 'CARD' | 'BANK_TRANSFER' | 'OTHER' | null;
+  notes?: string | null;
+  status: 'ISSUED' | 'CANCELLED';
+  createdAt: string;
+  items: InvoiceLine[];
+}
+
+export interface InvoiceDraft {
+  appointmentId: string;
+  appointmentDate: string;
+  clinicName: string;
+  clinicAddress?: string | null;
+  clinicPhone?: string | null;
+  clinicLogoUrl?: string | null;
+  currency: string;
+  patientId?: string | null;
+  patientName: string;
+  patientPhone?: string | null;
+  providerId?: string | null;
+  providerName?: string | null;
+  serviceId?: string | null;
+  serviceName: string;
+  servicePrice: string | number;
+  appointmentCompleted: boolean;
+}
+
+export interface InvoiceItemInput {
+  serviceId?: string | null;
+  description: string;
+  quantity: string;
+  unitPrice: string;
+}
+
+export interface CreateInvoiceRequest {
+  items: InvoiceItemInput[];
+  discountAmount: string;
+  taxAmount: string;
+  paymentStatus: 'UNPAID' | 'PAID';
+  paymentMethod?: 'CASH' | 'UPI' | 'CARD' | 'BANK_TRANSFER' | 'OTHER';
+  notes?: string;
+}
+
+export const getInvoiceDraft = async (appointmentId: string): Promise<InvoiceDraft> => {
+  const response = await api.get(`/api/invoices/appointments/${appointmentId}/draft`);
+  return response.data;
+};
+
+export const getInvoiceForAppointment = async (appointmentId: string): Promise<Invoice> => {
+  const response = await api.get(`/api/invoices/appointments/${appointmentId}`);
+  return response.data;
+};
+
+export const createInvoice = async (appointmentId: string, request: CreateInvoiceRequest): Promise<Invoice> => {
+  const response = await api.post(`/api/invoices/appointments/${appointmentId}`, request);
+  return response.data;
+};
+
+export const searchInvoices = async (query = ''): Promise<Invoice[]> => {
+  const response = await api.get('/api/invoices', { params: query.trim() ? { q: query.trim() } : {} });
+  return response.data;
+};
+
+export const getInvoice = async (invoiceId: string): Promise<Invoice> => {
+  const response = await api.get(`/api/invoices/${invoiceId}`);
+  return response.data;
+};
+
+export const updateInvoicePayment = async (
+  invoiceId: string,
+  paymentStatus: 'UNPAID' | 'PAID',
+  paymentMethod?: string
+): Promise<Invoice> => {
+  const response = await api.patch(`/api/invoices/${invoiceId}/payment`, { paymentStatus, paymentMethod });
+  return response.data;
+};
+
+export const cancelInvoice = async (invoiceId: string): Promise<Invoice> => {
+  const response = await api.post(`/api/invoices/${invoiceId}/cancel`);
+  return response.data;
+};
+
 export interface PagedAppointments {
   content: AppointmentResponse[];
   totalElements: number;

@@ -4,6 +4,7 @@ import {
   Calendar,
   Check,
   ClipboardCheck,
+  FileText,
   QrCode,
   Stethoscope,
   Users,
@@ -265,7 +266,7 @@ const LandingPage = () => {
             <h2 className="text-3xl font-bold text-gray-900">The day-to-day essentials</h2>
             <p className="mx-auto mt-3 max-w-2xl text-gray-600">Keep the online booking path connected to the work your clinic team already does.</p>
           </div>
-          <div className="mt-10 grid gap-5 md:grid-cols-3">
+          <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
             <article className="rounded-xl border border-blue-100 bg-blue-50/60 p-6 md:col-span-3">
               <Calendar className="h-7 w-7 text-blue-600" />
               <h3 className="mt-4 text-lg font-semibold text-gray-900">Get patients booked—and manage every appointment</h3>
@@ -276,10 +277,15 @@ const LandingPage = () => {
               <h3 className="mt-4 text-lg font-semibold text-gray-900">Find patient records</h3>
               <p className="mt-2 text-gray-600">Search patient records by name, phone, or email and review appointment-related information.</p>
             </article>
-            <article className="rounded-xl border border-gray-200 bg-white p-6 md:col-span-2">
+            <article className="rounded-xl border border-gray-200 bg-white p-6">
               <ClipboardCheck className="h-7 w-7 text-green-600" />
               <h3 className="mt-4 text-lg font-semibold text-gray-900">Set up doctors, services, and schedules</h3>
               <p className="mt-2 text-gray-600">Configure doctors, bookable services, service durations, and working hours that determine the availability shown to patients.</p>
+            </article>
+            <article className="rounded-xl border border-gray-200 bg-white p-6">
+              <FileText className="h-7 w-7 text-violet-600" />
+              <h3 className="mt-4 text-lg font-semibold text-gray-900">Create patient invoices and receipts</h3>
+              <p className="mt-2 text-gray-600">After an appointment is completed, generate a prefilled invoice, review its items and payment details, then print it or save it as a PDF for the patient.</p>
             </article>
           </div>
         </div>
@@ -314,6 +320,7 @@ const LandingPage = () => {
               { question: 'Can multiple doctors use Bookzi?', answer: 'The clinic setup and public booking flow support multiple doctors. Each doctor needs the relevant details and availability configured.' },
               { question: 'Can I cancel an appointment?', answer: 'Clinic staff can cancel eligible appointments from appointment details and provide a cancellation reason. Patient self-cancellation is not part of the current public booking flow.' },
               { question: 'How do I get the clinic QR code?', answer: 'Open Settings → Booking Page to copy the clinic URL or download the QR code image.' },
+              { question: 'Can I create an invoice or receipt for a visit?', answer: 'Yes. After marking an appointment complete, clinic staff can generate an invoice with patient, clinic, doctor, and appointment details prefilled, review the items and payment status, then print it or save it as a PDF. Tax is entered as an amount; Bookzi does not currently calculate GST or claim GST tax-invoice compliance.' },
             ].map(({ question, answer }) => (
               <details key={question} className="group py-5">
                 <summary className="cursor-pointer list-none pr-8 font-semibold text-gray-900 marker:hidden">
