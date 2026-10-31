@@ -4,6 +4,7 @@ import { QRCodeCanvas } from 'qrcode.react';
 import api from '../lib/api';
 import WhatsAppSettingsTab from '../components/WhatsAppSettingsTab';
 import StaffManagementTab from '../components/StaffManagementTab';
+import BookingPosterTools from '../components/BookingPosterTools';
 
 interface TenantConfig {
   business_name?: string;
@@ -132,7 +133,7 @@ const SettingsPage = () => {
     const canvas = document.getElementById('booking-qr-canvas') as HTMLCanvasElement | null;
     if (!canvas) return;
     const link = document.createElement('a');
-    link.download = `${tenant?.slug || 'clinic'}-booking-qr.png`;
+    link.download = `bookzi-qr-${tenant?.slug || 'clinic'}.png`;
     link.href = canvas.toDataURL('image/png');
     link.click();
   };
@@ -590,6 +591,21 @@ const SettingsPage = () => {
                     <p className="mt-2 text-sm text-gray-500">
                       Print this at reception, in the waiting room, or on prescriptions - scanning it opens your booking page directly.
                     </p>
+                  </div>
+
+                  <div className="border-t border-gray-200 pt-6">
+                    <h3 className="text-lg font-semibold text-gray-900">Booking poster</h3>
+                    <p className="mb-4 mt-1 text-sm text-gray-600">
+                      Download a ready-to-print poster featuring your clinic, booking QR code, and link.
+                    </p>
+                    <BookingPosterTools
+                      bookingUrl={bookingPageUrl}
+                      clinicSlug={tenant.slug}
+                      clinicName={tenant.name}
+                      clinicLogoUrl={tenant.logoUrl}
+                      clinicPhone={tenant.phone}
+                      clinicAddress={tenant.address}
+                    />
                   </div>
                 </div>
               ) : (
