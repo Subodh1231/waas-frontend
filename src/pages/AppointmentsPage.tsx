@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, startOfWeek, endOfWeek, isToday } from 'date-fns';
 import { Plus } from 'lucide-react';
 import api from '../lib/api';
@@ -29,6 +29,8 @@ type ViewMode = 'calendar' | 'list';
 type CalendarMode = 'week' | 'month';
 
 const AppointmentsPage = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [appointmentPatientId, setAppointmentPatientId] = useState<string | undefined>();
   const [viewMode, setViewMode] = useState<ViewMode>('calendar');
   const [calendarMode, setCalendarMode] = useState<CalendarMode>('week');
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -50,6 +52,17 @@ const AppointmentsPage = () => {
     cancelled: 0,
     today: 0
   });
+
+  useEffect(() => {
+    const patientId = searchParams.get('patientId');
+    if (!patientId) return;
+    setAppointmentPatientId(patientId);
+    setShowAddModal(true);
+    setSearchParams((current) => {
+      current.delete('patientId');
+      return current;
+    }, { replace: true });
+  }, [searchParams, setSearchParams]);
 
   // Fetch bookings data
   const fetchBookings = async () => {
@@ -568,7 +581,10 @@ const AppointmentsPage = () => {
           <p className="text-gray-600">Manage and view your clinic appointments</p>
         </div>
         <button
-          onClick={() => setShowAddModal(true)}
+          onClick={() => {
+            setAppointmentPatientId(undefined);
+            setShowAddModal(true);
+          }}
           className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors shadow-sm"
         >
           <Plus className="w-5 h-5" />
@@ -740,10 +756,15 @@ const AppointmentsPage = () => {
       {/* Add Appointment Modal */}
       <AddAppointmentModal
         isOpen={showAddModal}
-        onClose={() => setShowAddModal(false)}
+        defaultPatientId={appointmentPatientId}
+        onClose={() => {
+          setShowAddModal(false);
+          setAppointmentPatientId(undefined);
+        }}
         onSuccess={() => {
           fetchBookings();
           setShowAddModal(false);
+          setAppointmentPatientId(undefined);
         }}
       />
     </div>

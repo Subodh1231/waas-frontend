@@ -29,6 +29,7 @@ interface PatientAnalytics {
   // Source breakdown
   manualAppointments: number;
   whatsappAppointments: number;
+  onlineAppointments: number;
   otherAppointments: number;
   
   // Status
@@ -96,18 +97,23 @@ const PatientsPage = () => {
   };
 
   const handleViewHistory = (patientId: string) => {
-    navigate(`/appointments?patientId=${patientId}`);
+    navigate(`/patients/${patientId}`);
   };
 
   const getSourceBadge = (patient: PatientAnalytics) => {
-    if (patient.manualAppointments > 0 && patient.whatsappAppointments > 0) {
-      return <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded-full">Mixed</span>;
-    } else if (patient.manualAppointments > 0) {
-      return <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full">Manual</span>;
-    } else if (patient.whatsappAppointments > 0) {
-      return <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">WhatsApp</span>;
-    }
-    return null;
+    const channels = [
+      patient.manualAppointments > 0 ? 'Manual' : null,
+      patient.whatsappAppointments > 0 ? 'WhatsApp' : null,
+      patient.onlineAppointments > 0 ? 'Online' : null,
+    ].filter(Boolean);
+    if (channels.length === 0) return <span className="text-xs text-gray-400">—</span>;
+    return (
+      <div className="flex flex-wrap gap-1">
+        {channels.map((channel) => (
+          <span key={channel} className="rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-700">{channel}</span>
+        ))}
+      </div>
+    );
   };
 
   const formatCurrency = (amount: number) => {
@@ -160,7 +166,7 @@ const PatientsPage = () => {
   return (
     <div className="h-screen w-full flex flex-col bg-gray-50">
       {/* Header */}
-      <div className="px-8 pt-6 pb-4 shrink-0">
+      <div className="px-4 pt-6 pb-4 shrink-0 sm:px-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Patients</h1>
         <p className="text-gray-600">
           Manage patient records and appointment history
@@ -168,7 +174,7 @@ const PatientsPage = () => {
       </div>
 
       {/* Filters */}
-      <div className="px-8 pb-4 shrink-0">
+      <div className="px-4 pb-4 shrink-0 sm:px-8">
         <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
         <div className="flex items-center gap-4 flex-wrap">
           {/* Search */}
@@ -196,6 +202,7 @@ const PatientsPage = () => {
               <option value="ALL">All Sources</option>
               <option value="MANUAL">Manual Only</option>
               <option value="WHATSAPP">WhatsApp Only</option>
+              <option value="ONLINE">Online Only</option>
             </select>
           </div>
 
@@ -234,7 +241,7 @@ const PatientsPage = () => {
         <div className="bg-white rounded-lg shadow p-12 text-center mx-8">
           <User className="w-16 h-16 text-gray-300 mx-auto mb-4" />
           <p className="text-gray-500 text-lg mb-4">
-            {searchQuery ? 'No patients found matching your search' : 'No patients yet'}
+            {searchQuery ? 'No patients found matching your search' : 'No patients yet. Patients will appear here when appointments are created.'}
           </p>
           {!searchQuery && (
             <button
@@ -261,7 +268,7 @@ const PatientsPage = () => {
                     Visits
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Revenue
+                    Paid Invoice Revenue
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Last Visit
@@ -270,7 +277,7 @@ const PatientsPage = () => {
                     Next Appointment
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Source
+                    Booking Channels
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-[120px]">
                     Actions
@@ -284,9 +291,14 @@ const PatientsPage = () => {
                       <div className="flex items-center">
                         <div>
                           <div className="flex items-center gap-2">
-                            <div className="text-sm font-medium text-gray-900">
+                            <button
+                              type="button"
+                              onClick={() => handleViewHistory(patient.id)}
+                              aria-label={`View patient ${patient.name || 'record'}`}
+                              className="text-left text-sm font-medium text-gray-900 underline decoration-transparent underline-offset-2 hover:text-blue-700 hover:decoration-current focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                            >
                               {patient.name || 'Unknown'}
-                            </div>
+                            </button>
                             {patient.isNewPatient && (
                               <span className="px-2 py-0.5 bg-yellow-100 text-yellow-700 text-xs rounded-full">
                                 New
@@ -297,7 +309,11 @@ const PatientsPage = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{patient.phoneNumber}</div>
+                      {patient.phoneNumber ? (
+                        <a href={`tel:${patient.phoneNumber}`} className="text-sm text-blue-700 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500" aria-label={`Call patient ${patient.name || ''} at ${patient.phoneNumber}`}>
+                          {patient.phoneNumber}
+                        </a>
+                      ) : <span className="text-sm text-gray-400">No phone number</span>}
                       {patient.email && (
                         <div className="text-xs text-gray-500">{patient.email}</div>
                       )}
@@ -317,11 +333,6 @@ const PatientsPage = () => {
                           {formatCurrency(patient.totalRevenue)}
                         </span>
                       </div>
-                      {patient.totalVisits > 0 && (
-                        <div className="text-xs text-gray-500">
-                          Avg: {formatCurrency(patient.averageVisitValue)}
-                        </div>
-                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-700">
@@ -344,25 +355,32 @@ const PatientsPage = () => {
                       <div className="flex items-center justify-end gap-2">
                         <button
                           onClick={() => handleBookAppointment(patient.id)}
-                          className="text-blue-600 hover:text-blue-900"
-                          title="Book appointment"
+                          type="button"
+                          className="rounded p-1 text-blue-600 hover:bg-blue-50 hover:text-blue-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                          title="New Appointment"
+                          aria-label={`New appointment for ${patient.name || 'patient'}`}
                         >
                           <Plus className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleViewHistory(patient.id)}
-                          className="text-gray-600 hover:text-gray-900"
-                          title="View history"
+                          type="button"
+                          className="rounded p-1 text-gray-600 hover:bg-gray-100 hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                          title="View Patient"
+                          aria-label={`View patient ${patient.name || 'record'}`}
                         >
                           <Activity className="w-4 h-4" />
                         </button>
-                        <button
-                          onClick={() => window.open(`tel:${patient.phoneNumber}`)}
-                          className="text-gray-600 hover:text-gray-900"
-                          title="Call patient"
-                        >
-                          <Phone className="w-4 h-4" />
-                        </button>
+                        {patient.phoneNumber && (
+                          <a
+                            href={`tel:${patient.phoneNumber}`}
+                            className="rounded p-1 text-gray-600 hover:bg-gray-100 hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                            title="Call Patient"
+                            aria-label={`Call patient ${patient.name || 'patient'}`}
+                          >
+                            <Phone className="w-4 h-4" />
+                          </a>
+                        )}
                       </div>
                     </td>
                   </tr>

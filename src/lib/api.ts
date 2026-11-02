@@ -700,6 +700,60 @@ export interface PatientSearchResult {
   totalAppointments: number;
 }
 
+export interface PatientRecord {
+  id: string;
+  tenantId: string;
+  name?: string | null;
+  phoneNumber: string;
+  email?: string | null;
+  createdAt: string;
+}
+
+export interface PatientAppointmentHistoryItem {
+  id: string;
+  patientId?: string;
+  patientName: string;
+  patientPhone?: string;
+  serviceName: string;
+  providerName?: string;
+  startTime?: string | null;
+  status?: string | null;
+  appointmentStatus?: string | null;
+  source?: 'MANUAL' | 'WHATSAPP' | 'ONLINE';
+  invoiceId?: string | null;
+  invoiceStatus?: 'ISSUED' | 'CANCELLED' | null;
+  invoicePaymentStatus?: 'UNPAID' | 'PAID' | null;
+}
+
+export interface PatientInvoiceSummary {
+  id: string;
+  invoiceNumber: string;
+  invoiceDate: string;
+  providerName?: string | null;
+  totalAmount: string | number;
+  currency: string;
+  paymentStatus: 'UNPAID' | 'PAID';
+  status: 'ISSUED' | 'CANCELLED';
+}
+
+export const getPatient = async (patientId: string): Promise<PatientRecord> => {
+  const response = await api.get(`/api/patients/${patientId}`);
+  return response.data;
+};
+
+export const getPatientAppointments = async (
+  patientId: string,
+  limit = 100
+): Promise<PatientAppointmentHistoryItem[]> => {
+  const response = await api.get(`/api/appointments/patients/${patientId}`, { params: { limit } });
+  return response.data.appointments || [];
+};
+
+export const getPatientInvoices = async (patientId: string): Promise<PatientInvoiceSummary[]> => {
+  const response = await api.get(`/api/invoices/patients/${patientId}`);
+  return response.data;
+};
+
 /**
  * Search patients by phone number
  */

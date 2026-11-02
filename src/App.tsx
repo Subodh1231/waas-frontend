@@ -14,6 +14,7 @@ const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage'));
 const TermsPage = lazy(() => import('./pages/TermsPage'));
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
 const PatientsPage = lazy(() => import('./pages/PatientsPage'));
+const PatientDetailPage = lazy(() => import('./pages/PatientDetailPage'));
 const ServicesPage = lazy(() => import('./pages/ServicesPage'));
 const AppointmentsPage = lazy(() => import('./pages/AppointmentsPage'));
 const InvoicesPage = lazy(() => import('./pages/InvoicesPage'));
@@ -59,6 +60,7 @@ function App() {
             <Route element={<DashboardLayout />}>
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/patients" element={<PatientsPage />} />
+              <Route path="/patients/:patientId" element={<PatientDetailPage />} />
               <Route path="/services" element={<ServicesPage />} />
               <Route path="/appointments" element={<AppointmentsPage />} />
               <Route path="/invoices" element={<InvoicesPage />} />

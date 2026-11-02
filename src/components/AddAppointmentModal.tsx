@@ -20,6 +20,7 @@ interface AddAppointmentModalProps {
   defaultDate?: Date;
   defaultTime?: string;
   defaultProvider?: string;
+  defaultPatientId?: string;
 }
 
 export default function AddAppointmentModal({
@@ -29,6 +30,7 @@ export default function AddAppointmentModal({
   defaultDate,
   defaultTime,
   defaultProvider,
+  defaultPatientId,
 }: AddAppointmentModalProps) {
   // Form state
   const [phone, setPhone] = useState('');
@@ -70,6 +72,30 @@ export default function AddAppointmentModal({
       loadServices();
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen || !defaultPatientId) return;
+    let active = true;
+    api.get(`/api/patients/${defaultPatientId}`)
+      .then(({ data }) => {
+        if (!active) return;
+        const selectedPatient: PatientSearchResult = {
+          id: data.id,
+          name: data.name || '',
+          phone: data.phoneNumber,
+          email: data.email || undefined,
+          totalAppointments: 0,
+        };
+        setPatient(selectedPatient);
+        setPhone(selectedPatient.phone);
+        setPatientName(selectedPatient.name);
+        setPatientEmail(selectedPatient.email || '');
+      })
+      .catch((err) => {
+        if (active) setError(err.response?.data?.message || 'Could not load the selected patient.');
+      });
+    return () => { active = false; };
+  }, [isOpen, defaultPatientId]);
 
   // Patient search with debounce
   useEffect(() => {

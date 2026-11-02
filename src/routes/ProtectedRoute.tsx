@@ -35,7 +35,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const onboardingStatus = getOnboardingStatus();
   const isOnSetupPage = location.pathname === '/setup';
   const isDashboardRoute = ['/dashboard', '/chats', '/customers', '/services', '/availability', '/appointments', '/invoices', '/subscription', '/settings'].includes(location.pathname)
-    || location.pathname.startsWith('/invoices/');
+    || location.pathname.startsWith('/invoices/')
+    || location.pathname.startsWith('/patients/');
 
   // If onboarding is not completed and trying to access dashboard routes, redirect to setup
   if (onboardingStatus !== 'COMPLETED' && isDashboardRoute) {

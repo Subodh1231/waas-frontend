@@ -32,7 +32,9 @@ const Sidebar = () => {
             key={item.path}
             to={item.path}
             label={item.label}
-            active={location.pathname === item.path || (item.path === '/invoices' && location.pathname.startsWith('/invoices/'))}
+            active={location.pathname === item.path
+              || (item.path === '/invoices' && location.pathname.startsWith('/invoices/'))
+              || (item.path === '/patients' && location.pathname.startsWith('/patients/'))}
           />
         ))}
       </nav>
