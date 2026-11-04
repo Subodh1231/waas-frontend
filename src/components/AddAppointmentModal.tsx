@@ -355,7 +355,7 @@ export default function AddAppointmentModal({
                   </div>
                   <button
                     type="button"
-                    onClick={() => window.open(`/customers?search=${patient.phone}`, '_blank')}
+                    onClick={() => window.open(`/patients/${patient.id}`, '_blank')}
                     className="text-xs text-blue-600 hover:text-blue-800 underline"
                   >
                     View History →
