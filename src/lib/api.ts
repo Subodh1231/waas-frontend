@@ -331,6 +331,7 @@ export interface PatientInfo {
   phone: string;
   name?: string;
   email?: string;
+  updatePatientEmail?: boolean;
 }
 
 export interface CreateAppointmentRequest {
@@ -512,6 +513,20 @@ export const updateInvoicePayment = async (
 export const cancelInvoice = async (invoiceId: string): Promise<Invoice> => {
   const response = await api.post(`/api/invoices/${invoiceId}/cancel`);
   return response.data;
+};
+
+export interface PublicFeedbackInfo {
+  clinicName: string;
+  doctorName?: string | null;
+}
+
+export const getPublicFeedbackInfo = async (token: string): Promise<PublicFeedbackInfo> => {
+  const response = await api.get(`/api/public/feedback/${encodeURIComponent(token)}`);
+  return response.data;
+};
+
+export const submitPublicFeedback = async (token: string, rating: number, comment?: string): Promise<void> => {
+  await api.post(`/api/public/feedback/${encodeURIComponent(token)}`, { rating, comment });
 };
 
 export interface PagedAppointments {
@@ -754,6 +769,51 @@ export const getPatientInvoices = async (patientId: string): Promise<PatientInvo
   return response.data;
 };
 
+export const updatePatientEmail = async (patientId: string, email: string): Promise<PatientRecord> => {
+  const response = await api.patch(`/api/patients/${patientId}/email`, { email: email || null });
+  return response.data;
+};
+
+export interface OperationalEmailResult {
+  status: string;
+  providerMessageId?: string;
+}
+
+export interface PatientFeedbackDeliveryStatus {
+  appointmentId: string;
+  status: string;
+  scheduledAt: string;
+  sentAt?: string | null;
+}
+
+export const getPatientFeedbackDeliveryStatus = async (patientId: string): Promise<PatientFeedbackDeliveryStatus[]> => {
+  const response = await api.get(`/api/notifications/patients/${patientId}/feedback-status`);
+  return response.data;
+};
+
+export const sendInvoiceEmail = async (
+  invoiceId: string,
+  recipient: string,
+  updatePatientEmail: boolean
+): Promise<OperationalEmailResult> => {
+  const response = await api.post(`/api/notifications/invoices/${invoiceId}/email`, { recipient, updatePatientEmail });
+  return response.data;
+};
+
+export const getInvoiceEmailSuggestion = async (invoiceId: string): Promise<string> => {
+  const response = await api.get<{ email: string }>(`/api/notifications/invoices/${invoiceId}/email-recipient`);
+  return response.data.email || '';
+};
+
+export const sendAppointmentFeedbackEmail = async (
+  appointmentId: string,
+  recipient: string,
+  updatePatientEmail: boolean
+): Promise<OperationalEmailResult> => {
+  const response = await api.post(`/api/notifications/appointments/${appointmentId}/feedback-email`, { recipient, updatePatientEmail });
+  return response.data;
+};
+
 /**
  * Search patients by phone number
  */
@@ -905,6 +965,7 @@ export interface PublicBookingRequest {
   time: string; // HH:mm
   patientName: string;
   patientPhone: string;
+  patientEmail?: string;
 }
 
 export interface PublicBookingConfirmation {

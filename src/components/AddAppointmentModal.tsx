@@ -38,6 +38,7 @@ export default function AddAppointmentModal({
   const [searchingPatient, setSearchingPatient] = useState(false);
   const [patientName, setPatientName] = useState('');
   const [patientEmail, setPatientEmail] = useState('');
+  const [updatePatientEmail, setUpdatePatientEmail] = useState(false);
 
   const [serviceId, setServiceId] = useState('');
   const [services, setServices] = useState<ServiceItem[]>([]);
@@ -248,6 +249,7 @@ export default function AddAppointmentModal({
         phone,
         name: patient?.name || patientName,
         email: patient?.email || patientEmail || undefined,
+            updatePatientEmail: updatePatientEmail && Boolean(patient),
       },
       serviceId,
       providerName,
@@ -282,6 +284,7 @@ export default function AddAppointmentModal({
     setPatient(null);
     setPatientName('');
     setPatientEmail('');
+    setUpdatePatientEmail(false);
     setServiceId('');
     setProviderId('');
     setPaymentStatus('PENDING');
@@ -388,6 +391,23 @@ export default function AddAppointmentModal({
               />
             </div>
           )}
+
+          <div>
+            <label className="mb-2 block text-sm font-medium text-gray-700">Email (optional)</label>
+            <input
+              type="email"
+              value={patientEmail}
+              onChange={(e) => setPatientEmail(e.target.value)}
+              placeholder="patient@example.com"
+              className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-blue-500"
+            />
+            {patient && patientEmail.trim() && patientEmail.trim().toLowerCase() !== (patient.email || '').trim().toLowerCase() && (
+              <label className="mt-2 flex items-start gap-2 text-sm text-gray-600">
+                <input type="checkbox" checked={updatePatientEmail} onChange={(e) => setUpdatePatientEmail(e.target.checked)} className="mt-1" />
+                <span>Update this patient’s email for future communication</span>
+              </label>
+            )}
+          </div>
 
           {/* Provider Selection - MOVED FIRST */}
           <div>

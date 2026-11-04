@@ -43,6 +43,7 @@ const PublicClinicPage = () => {
 
   const [patientName, setPatientName] = useState('');
   const [patientPhone, setPatientPhone] = useState('');
+  const [patientEmail, setPatientEmail] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [confirmation, setConfirmation] = useState<PublicBookingConfirmation | null>(null);
@@ -110,6 +111,10 @@ const PublicClinicPage = () => {
       setError('Please enter your name and phone number');
       return;
     }
+    if (patientEmail.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(patientEmail.trim())) {
+      setError('Please enter a valid email address or leave it blank');
+      return;
+    }
 
     setSubmitting(true);
     setError('');
@@ -121,6 +126,7 @@ const PublicClinicPage = () => {
         time: selectedSlot.slice(0, 5),
         patientName: patientName.trim(),
         patientPhone: patientPhone.trim(),
+        patientEmail: patientEmail.trim() || undefined,
       });
       setConfirmation(result);
     } catch (err: any) {
@@ -157,7 +163,7 @@ const PublicClinicPage = () => {
           <h1 className="text-xl font-bold text-gray-900 mb-1">Appointment Confirmed</h1>
           <p className="text-gray-600 mb-6">{confirmation.clinicName}</p>
           <div className="text-left bg-gray-50 rounded-lg p-4 space-y-2 text-sm">
-            <p><span className="text-gray-500">Doctor:</span> <span className="font-medium">{confirmation.doctorName}</span></p>
+            <p><span className="text-gray-500">Provider:</span> <span className="font-medium">{confirmation.doctorName}</span></p>
             <p><span className="text-gray-500">Service:</span> <span className="font-medium">{confirmation.serviceName}</span></p>
             <p><span className="text-gray-500">Date:</span> <span className="font-medium">{confirmation.date}</span></p>
             <p><span className="text-gray-500">Time:</span> <span className="font-medium">{confirmation.time}</span></p>
@@ -201,13 +207,13 @@ const PublicClinicPage = () => {
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
         {clinic.doctors.length === 0 ? (
           <div className="bg-white rounded-lg shadow p-6 text-center text-gray-600">
-            Online booking isn't set up for this clinic yet. Please call {clinic.phone || 'the clinic'} to book an appointment.
+            No clinicians are currently available for online booking. Please call {clinic.phone || 'the clinic'} to book an appointment.
           </div>
         ) : (
           <>
-            {/* Doctor selection */}
+            {/* Provider selection */}
             <section className="bg-white rounded-lg shadow p-5">
-              <h2 className="font-semibold text-gray-900 mb-3">1. Choose a doctor</h2>
+              <h2 className="font-semibold text-gray-900 mb-3">1. Choose a provider</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {clinic.doctors.map((doctor) => (
                   <button
@@ -230,7 +236,7 @@ const PublicClinicPage = () => {
             <section className="bg-white rounded-lg shadow p-5">
               <h2 className="font-semibold text-gray-900 mb-3">2. Choose a service</h2>
               {!selectedDoctor ? (
-                <p className="text-sm text-gray-500">Select a doctor first to see their services.</p>
+                <p className="text-sm text-gray-500">Select a provider first to see their services.</p>
               ) : availableServices.length === 0 ? (
                 <p className="text-sm text-gray-500">No services are bookable online with {selectedDoctor.name}.</p>
               ) : (
@@ -271,7 +277,7 @@ const PublicClinicPage = () => {
               </div>
 
               {!selectedDoctor ? (
-                <p className="text-sm text-gray-500">Select a doctor to see available times.</p>
+                <p className="text-sm text-gray-500">Select a provider to see available times.</p>
               ) : !selectedService ? (
                 <p className="text-sm text-gray-500">Select a service to see matching available times.</p>
               ) : slotsLoading ? (
@@ -340,6 +346,17 @@ const PublicClinicPage = () => {
                     onChange={(e) => setPatientPhone(e.target.value)}
                     className="w-full px-3 py-3 border border-gray-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
+                  <div>
+                    <input
+                      type="email"
+                      autoComplete="email"
+                      placeholder="Email address (optional)"
+                      value={patientEmail}
+                      onChange={(e) => setPatientEmail(e.target.value)}
+                      className="w-full px-3 py-3 border border-gray-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <p className="mt-1 text-xs text-gray-500">Used for appointment reminders and visit-related communication.</p>
+                  </div>
                 </div>
 
                 {error && <p className="text-sm text-red-600 mt-3">{error}</p>}

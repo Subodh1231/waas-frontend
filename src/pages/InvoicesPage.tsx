@@ -9,6 +9,8 @@ import {
   getInvoiceForAppointment,
   searchInvoices,
   updateInvoicePayment,
+  sendInvoiceEmail,
+  getInvoiceEmailSuggestion,
   type CreateInvoiceRequest,
   type Invoice,
   type InvoiceDraft,
@@ -16,6 +18,7 @@ import {
   type ServiceItem,
 } from '../lib/api';
 import api from '../lib/api';
+import SendOperationalEmailModal from '../components/SendOperationalEmailModal';
 
 type EditableLine = InvoiceItemInput & { rowId: string };
 
@@ -53,6 +56,10 @@ const InvoicesPage = () => {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [invoice, setInvoice] = useState<Invoice | null>(null);
   const [detailPaymentMethod, setDetailPaymentMethod] = useState('CASH');
+  const [showEmailDialog, setShowEmailDialog] = useState(false);
+  const [invoiceEmailSuggestion, setInvoiceEmailSuggestion] = useState('');
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [notice, setNotice] = useState('');
   const [draft, setDraft] = useState<InvoiceDraft | null>(null);
   const [services, setServices] = useState<ServiceItem[]>([]);
   const [lines, setLines] = useState<EditableLine[]>([]);
@@ -188,6 +195,33 @@ const InvoicesPage = () => {
     }
   };
 
+  const handleSendInvoiceEmail = async (recipient: string, updatePatientEmail: boolean) => {
+    if (!invoice) return;
+    setSendingEmail(true);
+    setError('');
+    try {
+      const result = await sendInvoiceEmail(invoice.id, recipient, updatePatientEmail);
+      setNotice(result.status === 'SKIPPED'
+        ? 'Email delivery is disabled; the invoice was not sent.'
+        : 'Invoice email queued for delivery.');
+      setShowEmailDialog(false);
+    } catch (sendError: any) {
+      throw new Error(sendError.response?.data?.message || 'Could not queue the invoice email.');
+    } finally {
+      setSendingEmail(false);
+    }
+  };
+
+  const openInvoiceEmailDialog = async () => {
+    if (!invoice) return;
+    try {
+      setInvoiceEmailSuggestion(await getInvoiceEmailSuggestion(invoice.id));
+    } catch {
+      setInvoiceEmailSuggestion('');
+    }
+    setShowEmailDialog(true);
+  };
+
   if (loading) {
     return <div className="p-8 text-center text-gray-500">Loading invoices…</div>;
   }
@@ -278,6 +312,7 @@ const InvoicesPage = () => {
         <div className="invoice-actions mx-auto mb-4 flex max-w-4xl flex-wrap items-center justify-between gap-3">
           <Link to="/invoices" className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-700"><ArrowLeft className="h-4 w-4" />Invoices</Link>
           <div className="flex flex-wrap gap-2">
+            {invoice.status === 'ISSUED' && <button onClick={() => void openInvoiceEmailDialog()} className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Email Invoice</button>}
             {invoice.status === 'ISSUED' && <>
               <select aria-label="Invoice payment method" value={detailPaymentMethod} onChange={(event) => setDetailPaymentMethod(event.target.value)} className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700">
                 <option value="CASH">Cash</option><option value="UPI">UPI</option><option value="CARD">Card</option><option value="BANK_TRANSFER">Bank transfer</option><option value="OTHER">Other</option>
@@ -288,6 +323,7 @@ const InvoicesPage = () => {
             <button onClick={() => window.print()} className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"><Printer className="h-4 w-4" />Print / Save PDF</button>
           </div>
         </div>
+        {notice && <div className="invoice-actions mx-auto mb-4 max-w-4xl rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-800">{notice}</div>}
         {error && <div className="invoice-actions mx-auto mb-4 max-w-4xl rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</div>}
         <article className="invoice-print mx-auto max-w-4xl rounded-xl border border-gray-200 bg-white p-6 shadow-sm sm:p-10">
           <header className="flex flex-col justify-between gap-6 border-b border-gray-200 pb-6 sm:flex-row">
@@ -318,6 +354,7 @@ const InvoicesPage = () => {
           {invoice.notes && <section className="mt-8 rounded-lg bg-gray-50 p-4"><p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Notes</p><p className="mt-2 whitespace-pre-line text-sm text-gray-700">{invoice.notes}</p></section>}
           <footer className="mt-10 border-t border-gray-200 pt-5 text-center text-sm text-gray-500"><p>Thank you for choosing {invoice.clinicName}.</p>{invoice.clinicPhone && <p className="mt-1">{invoice.clinicPhone}</p>}<p className="mt-3 text-xs">Invoice/receipt for record keeping. This document does not calculate GST or claim GST tax-invoice compliance.</p></footer>
         </article>
+        {showEmailDialog && <SendOperationalEmailModal title="Email invoice" description="Confirm or edit the recipient. The invoice PDF will be attached." initialEmail={invoiceEmailSuggestion} submitting={sendingEmail} onClose={() => setShowEmailDialog(false)} onSubmit={handleSendInvoiceEmail} />}
       </div>
     );
   }

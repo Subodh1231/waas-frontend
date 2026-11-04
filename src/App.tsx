@@ -21,6 +21,7 @@ const InvoicesPage = lazy(() => import('./pages/InvoicesPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const WhatsAppCallbackPage = lazy(() => import('./pages/WhatsAppCallbackPage'));
 const PublicClinicPage = lazy(() => import('./pages/PublicClinicPage'));
+const PublicFeedbackPage = lazy(() => import('./pages/PublicFeedbackPage'));
 const HelpCenterPage = lazy(() => import('./pages/HelpCenterPage'));
 const HelpGettingStartedPage = lazy(() => import('./pages/HelpGettingStartedPage'));
 const HelpReceptionistPage = lazy(() => import('./pages/HelpReceptionistPage'));
@@ -47,6 +48,7 @@ function App() {
 
           {/* Public patient booking page - bookzi.in/c/{slug} */}
           <Route path="/c/:slug" element={<PublicClinicPage />} />
+          <Route path="/f/:token" element={<PublicFeedbackPage />} />
 
           {/* Setup route - protected but outside DashboardLayout */}
           <Route element={<ProtectedRoute />}>

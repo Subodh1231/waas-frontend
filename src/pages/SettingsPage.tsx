@@ -34,6 +34,9 @@ interface Tenant {
 interface ReminderSettings {
   reminderEnabled24hr: boolean;
   reminderEnabled2hr: boolean;
+  emailConfirmationEnabled: boolean;
+  emailReminderEnabled24hr: boolean;
+  emailReminderEnabled2hr: boolean;
   timing24hr: number;
   timing2hr: number;
   messageTemplate24hr: string;
@@ -110,6 +113,9 @@ const SettingsPage = () => {
   const [reminderSettings, setReminderSettings] = useState<ReminderSettings>({
     reminderEnabled24hr: true,
     reminderEnabled2hr: true,
+    emailConfirmationEnabled: true,
+    emailReminderEnabled24hr: true,
+    emailReminderEnabled2hr: true,
     timing24hr: 24,
     timing2hr: 2,
     messageTemplate24hr: '',
@@ -687,77 +693,31 @@ const SettingsPage = () => {
             <div className="bg-white rounded-lg shadow p-6">
               <div className="flex items-center gap-3 mb-6">
                 <Bell className="w-6 h-6 text-blue-600" />
-                <h2 className="text-2xl font-bold text-gray-900">Appointment Reminders</h2>
+                <h2 className="text-2xl font-bold text-gray-900">Email notifications</h2>
               </div>
               
               <form onSubmit={saveReminders} className="space-y-6">
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="checkbox"
-                      id="reminder24hr"
-                      checked={reminderSettings.reminderEnabled24hr}
-                      onChange={(e) =>
-                        setReminderSettings({ ...reminderSettings, reminderEnabled24hr: e.target.checked })
-                      }
-                      className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
-                    />
-                    <label htmlFor="reminder24hr" className="text-sm font-medium text-gray-700">
-                      Enable 24-hour reminder
-                    </label>
-                  </div>
-
-                  {reminderSettings.reminderEnabled24hr && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Message Template (24hr)
+                <section className="rounded-xl border border-blue-100 bg-blue-50/60 p-4">
+                  <h3 className="font-semibold text-gray-900">Email notifications</h3>
+                  <p className="mt-1 text-sm text-gray-600">Sent only when a patient has an email address. Email provider status is managed by Bookzi.</p>
+                  <div className="mt-4 space-y-3">
+                    {[
+                      ['emailConfirmationEnabled', 'Send confirmation after an appointment is confirmed'],
+                      ['emailReminderEnabled24hr', 'Send an email reminder 24 hours before'],
+                      ['emailReminderEnabled2hr', 'Send an email reminder 2 hours before'],
+                    ].map(([field, label]) => (
+                      <label key={field} className="flex items-start gap-3 text-sm text-gray-700">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(reminderSettings[field as keyof ReminderSettings])}
+                          onChange={(event) => setReminderSettings({ ...reminderSettings, [field]: event.target.checked })}
+                          className="mt-0.5 h-4 w-4 rounded text-blue-600 focus:ring-2 focus:ring-blue-500"
+                        />
+                        <span>{label}</span>
                       </label>
-                      <textarea
-                        value={reminderSettings.messageTemplate24hr}
-                        onChange={(e) =>
-                          setReminderSettings({ ...reminderSettings, messageTemplate24hr: e.target.value })
-                        }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        rows={3}
-                        placeholder="Hi {name}, reminder: {service} appointment tomorrow at {time}"
-                      />
-                    </div>
-                  )}
-                </div>
-
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="checkbox"
-                      id="reminder2hr"
-                      checked={reminderSettings.reminderEnabled2hr}
-                      onChange={(e) =>
-                        setReminderSettings({ ...reminderSettings, reminderEnabled2hr: e.target.checked })
-                      }
-                      className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
-                    />
-                    <label htmlFor="reminder2hr" className="text-sm font-medium text-gray-700">
-                      Enable 2-hour reminder
-                    </label>
+                    ))}
                   </div>
-
-                  {reminderSettings.reminderEnabled2hr && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Message Template (2hr)
-                      </label>
-                      <textarea
-                        value={reminderSettings.messageTemplate2hr}
-                        onChange={(e) =>
-                          setReminderSettings({ ...reminderSettings, messageTemplate2hr: e.target.value })
-                        }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        rows={3}
-                        placeholder="Hi {name}, your {service} appointment is in 2 hours at {time}"
-                      />
-                    </div>
-                  )}
-                </div>
+                </section>
 
                 <div className="flex justify-end">
                   <button

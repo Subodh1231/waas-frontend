@@ -23,7 +23,7 @@ const HelpPatientBookingPage = () => {
             <section>
               <h2 className="text-xl font-semibold text-gray-900">What the public booking page is</h2>
               <p className="mt-2 text-gray-600">
-                Bookzi creates a public clinic page for each clinic using a slug. Patients can open this page directly in a browser to choose a doctor, service, date, and available time.
+                Bookzi creates a public clinic page for each clinic using a slug. Patients can open this page directly in a browser to choose a provider, service, date, and available time.
               </p>
             </section>
 
@@ -38,7 +38,7 @@ const HelpPatientBookingPage = () => {
               <h2 className="text-xl font-semibold text-gray-900">How patients use it</h2>
               <ol className="mt-3 list-decimal space-y-2 pl-5 text-gray-600">
                 <li>Open the clinic booking page.</li>
-                <li>Select a doctor.</li>
+                <li>Select a provider.</li>
                 <li>Choose a service.</li>
                 <li>Select a date and available slot.</li>
                 <li>Enter name and phone number.</li>
@@ -82,7 +82,7 @@ const HelpPatientBookingPage = () => {
                 <span className="text-gray-400">→</span>
                 <span className="rounded-full bg-gray-100 px-3 py-1.5">Clinic page</span>
                 <span className="text-gray-400">→</span>
-                <span className="rounded-full bg-gray-100 px-3 py-1.5">Doctor / service</span>
+                <span className="rounded-full bg-gray-100 px-3 py-1.5">Provider / service</span>
                 <span className="text-gray-400">→</span>
                 <span className="rounded-full bg-gray-100 px-3 py-1.5">Date</span>
                 <span className="text-gray-400">→</span>
