@@ -16,7 +16,11 @@ const PublicFeedbackPage = () => {
   useEffect(() => {
     let active = true;
     getPublicFeedbackInfo(token)
-      .then((data) => { if (active) setInfo(data); })
+      .then((data) => {
+        if (!active) return;
+        setInfo(data);
+        if (data.alreadySubmitted) setSubmitted(true);
+      })
       .catch((requestError: any) => { if (active) setError(requestError.response?.data?.message || 'This feedback link is invalid or has expired.'); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
@@ -44,13 +48,13 @@ const PublicFeedbackPage = () => {
     <main className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-10">
       <section className="w-full max-w-lg rounded-2xl border border-gray-200 bg-white p-6 shadow-sm sm:p-8">
         {loading ? <div className="py-10 text-center text-gray-500"><Loader2 className="mx-auto h-7 w-7 animate-spin text-blue-600" /><p className="mt-3">Loading feedback form…</p></div> : submitted ? (
-          <div className="py-8 text-center"><CheckCircle2 className="mx-auto h-12 w-12 text-green-600" /><h1 className="mt-4 text-2xl font-bold text-gray-900">Thank you for your feedback</h1><p className="mt-2 text-gray-600">Your response has been sent to {info?.clinicName}.</p></div>
+          <div className="py-8 text-center"><CheckCircle2 className="mx-auto h-12 w-12 text-green-600" /><h1 className="mt-4 text-2xl font-bold text-gray-900">Thank you for your feedback</h1><p className="mt-2 text-gray-600">{info?.alreadySubmitted ? 'Feedback has already been submitted for this visit.' : `Your response has been shared privately with ${info?.clinicName}.`}</p></div>
         ) : info ? (
           <form onSubmit={submit}>
             <p className="text-sm font-semibold uppercase tracking-wide text-blue-600">Patient feedback</p>
             <h1 className="mt-2 text-2xl font-bold text-gray-900">How was your visit?</h1>
-            <p className="mt-2 text-gray-600">Your feedback helps {info.clinicName} improve. This link can be used once.</p>
-            {info.doctorName && <p className="mt-2 text-sm text-gray-500">Doctor: {info.doctorName}</p>}
+            <p className="mt-2 text-gray-600">Your feedback will be shared privately with {info.clinicName} to help improve your experience.</p>
+            {info.doctorName && <p className="mt-2 text-sm text-gray-500">Provider: {info.doctorName}</p>}
             <fieldset className="mt-6">
               <legend className="text-sm font-medium text-gray-700">Your rating</legend>
               <div className="mt-2 flex gap-2" role="radiogroup" aria-label="Rating from 1 to 5 stars">

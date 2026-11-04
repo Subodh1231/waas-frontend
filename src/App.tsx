@@ -18,6 +18,7 @@ const PatientDetailPage = lazy(() => import('./pages/PatientDetailPage'));
 const ServicesPage = lazy(() => import('./pages/ServicesPage'));
 const AppointmentsPage = lazy(() => import('./pages/AppointmentsPage'));
 const InvoicesPage = lazy(() => import('./pages/InvoicesPage'));
+const FeedbackPage = lazy(() => import('./pages/FeedbackPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const WhatsAppCallbackPage = lazy(() => import('./pages/WhatsAppCallbackPage'));
 const PublicClinicPage = lazy(() => import('./pages/PublicClinicPage'));
@@ -67,6 +68,7 @@ function App() {
               <Route path="/appointments" element={<AppointmentsPage />} />
               <Route path="/invoices" element={<InvoicesPage />} />
               <Route path="/invoices/:invoiceId" element={<InvoicesPage />} />
+              <Route path="/feedback" element={<FeedbackPage />} />
               <Route path="/settings" element={<SettingsPage />} />
             </Route>
           </Route>

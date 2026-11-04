@@ -6,8 +6,10 @@ import {
   getPatientAppointments,
   getPatientInvoices,
   getPatientFeedbackDeliveryStatus,
+  getPatientFeedbackSubmissions,
   type PatientAppointmentHistoryItem,
   type PatientInvoiceSummary,
+  type ClinicFeedbackItem,
   type PatientFeedbackDeliveryStatus,
   type PatientRecord,
 } from '../lib/api';
@@ -40,6 +42,7 @@ const PatientDetailPage = () => {
   const [error, setError] = useState('');
   const [emailEditing, setEmailEditing] = useState(false);
   const [feedbackDeliveries, setFeedbackDeliveries] = useState<PatientFeedbackDeliveryStatus[]>([]);
+  const [submittedFeedback, setSubmittedFeedback] = useState<ClinicFeedbackItem[]>([]);
   const [emailDraft, setEmailDraft] = useState('');
   const [savingEmail, setSavingEmail] = useState(false);
   const [emailDialog, setEmailDialog] = useState<{ type: 'feedback' | 'invoice'; id: string } | null>(null);
@@ -55,13 +58,15 @@ const PatientDetailPage = () => {
       getPatientAppointments(patientId),
       getPatientInvoices(patientId),
       getPatientFeedbackDeliveryStatus(patientId),
+      getPatientFeedbackSubmissions(patientId).catch(() => [] as ClinicFeedbackItem[]),
     ])
-      .then(([patientData, appointmentData, invoiceData, feedbackDeliveryData]) => {
+      .then(([patientData, appointmentData, invoiceData, feedbackDeliveryData, feedbackData]) => {
         if (!active) return;
         setPatient(patientData);
         setAppointments(appointmentData);
         setInvoices(invoiceData);
         setFeedbackDeliveries(feedbackDeliveryData);
+        setSubmittedFeedback(feedbackData);
       })
       .catch((requestError: any) => {
         if (active) setError(requestError.response?.status === 404
@@ -147,6 +152,7 @@ const PatientDetailPage = () => {
   feedbackDeliveries.forEach((status) => {
     if (!feedbackByAppointment.has(status.appointmentId)) feedbackByAppointment.set(status.appointmentId, status);
   });
+  const submissionByAppointment = new Map(submittedFeedback.map((item) => [item.appointmentId, item]));
 
   return (
     <div className="h-screen overflow-y-auto bg-gray-50 px-4 py-6 sm:px-8">
@@ -213,8 +219,18 @@ const PatientDetailPage = () => {
           {completedAppointments.length === 0 ? <p className="mt-4 rounded-lg bg-gray-50 p-4 text-sm text-gray-600">Feedback requests become available after a visit is completed.</p> : (
             <div className="mt-4 divide-y divide-gray-100">{completedAppointments.map((appointment) => {
               const delivery = feedbackByAppointment.get(appointment.id);
-              const stateLabel = !delivery ? 'Not queued' : delivery.status === 'SKIPPED_NO_EMAIL' ? 'Not sent · no email' : delivery.status === 'SENT' ? `Sent${delivery.sentAt ? ` · ${new Date(delivery.sentAt).toLocaleString()}` : ''}` : delivery.status === 'PENDING' || delivery.status === 'PROCESSING' ? 'Queued' : delivery.status === 'FAILED' ? 'Failed' : delivery.status === 'CANCELLED' ? 'Cancelled' : delivery.status;
-              return <div key={appointment.id} className="flex flex-col justify-between gap-3 py-3 sm:flex-row sm:items-center"><div><p className="text-sm font-medium text-gray-900">{appointment.startTime ? new Date(appointment.startTime).toLocaleDateString() : 'Completed visit'} · {appointment.providerName || 'Provider'}</p><p className="mt-1 text-xs text-gray-500">Feedback email: {stateLabel}</p></div><button type="button" onClick={() => setEmailDialog({ type: 'feedback', id: appointment.id })} className="w-fit rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">{patient.email ? (delivery?.status === 'SENT' ? 'Resend request' : 'Send request') : 'Add email and send'}</button></div>;
+              const submission = submissionByAppointment.get(appointment.id);
+              const stateLabel = submission ? 'Submitted' : !delivery ? 'Not queued' : delivery.status === 'SKIPPED_NO_EMAIL' ? 'Not sent · no email' : delivery.status === 'SENT' ? `Sent${delivery.sentAt ? ` · ${new Date(delivery.sentAt).toLocaleString()}` : ''}` : delivery.status === 'PENDING' || delivery.status === 'PROCESSING' ? 'Queued' : delivery.status === 'FAILED' ? 'Failed' : delivery.status === 'CANCELLED' ? 'Cancelled' : delivery.status;
+              return (
+                <div key={appointment.id} className="flex flex-col justify-between gap-3 py-3 sm:flex-row sm:items-center">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-gray-900">{appointment.startTime ? new Date(appointment.startTime).toLocaleDateString() : 'Completed visit'} · {appointment.providerName || 'Provider'}</p>
+                    <p className="mt-1 text-xs text-gray-500">Feedback request: {stateLabel}</p>
+                    {submission && <div className="mt-2 text-sm text-gray-700"><p className="font-medium text-amber-600">{'★'.repeat(submission.rating)}{'☆'.repeat(5 - submission.rating)}</p>{submission.comment && <p className="mt-1 whitespace-pre-wrap">“{submission.comment}”</p>}<p className="mt-1 text-xs text-gray-500">Submitted {new Date(submission.submittedAt).toLocaleString()}</p></div>}
+                  </div>
+                  {!submission && <button type="button" onClick={() => setEmailDialog({ type: 'feedback', id: appointment.id })} className="w-fit rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">{patient.email ? (delivery?.status === 'SENT' ? 'Resend request' : 'Send request') : 'Add email and send'}</button>}
+                </div>
+              );
             })}</div>
           )}
         </section>

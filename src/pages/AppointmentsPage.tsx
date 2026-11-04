@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, startOfWeek, endOfWeek, isToday } from 'date-fns';
-import { Plus } from 'lucide-react';
+import { Plus, Star } from 'lucide-react';
 import api from '../lib/api';
+import { getAppointmentFeedback, type AppointmentFeedbackView } from '../lib/api';
 import AddAppointmentModal from '../components/AddAppointmentModal';
 
 interface Booking {
@@ -876,6 +877,8 @@ const BookingDetailModal = ({
   const [paymentStatus, setPaymentStatus] = useState(booking.paymentStatus || 'PENDING');
   const [paymentMode, setPaymentMode] = useState(booking.paymentMode || 'CASH');
   const [paymentAmount, setPaymentAmount] = useState(booking.paymentAmount?.toString() || '');
+  const [feedback, setFeedback] = useState<AppointmentFeedbackView | null>(null);
+  const [feedbackLoading, setFeedbackLoading] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -893,6 +896,20 @@ const BookingDetailModal = ({
           setExistingInvoiceId(null);
         }
       });
+    return () => { active = false; };
+  }, [booking.id, isCompleted]);
+
+  useEffect(() => {
+    let active = true;
+    if (!isCompleted) {
+      setFeedback(null);
+      return () => { active = false; };
+    }
+    setFeedbackLoading(true);
+    getAppointmentFeedback(booking.id)
+      .then((result) => { if (active) setFeedback(result); })
+      .catch(() => { if (active) setFeedback({ status: 'NOT_REQUESTED' }); })
+      .finally(() => { if (active) setFeedbackLoading(false); });
     return () => { active = false; };
   }, [booking.id, isCompleted]);
 
@@ -964,6 +981,22 @@ const BookingDetailModal = ({
             <p className="text-sm text-gray-600 mb-1">Service</p>
             <p className="text-lg font-semibold text-gray-800">{booking.serviceName}</p>
           </div>
+
+          {isCompleted && (
+            <section className="border-t pt-4" aria-label="Appointment feedback">
+              <h3 className="text-sm font-semibold text-gray-800">Feedback</h3>
+              {feedbackLoading ? <p className="mt-2 text-sm text-gray-500">Loading feedback…</p> : feedback?.status === 'SUBMITTED' ? (
+                <div className="mt-2">
+                  <div className="flex items-center gap-1" aria-label={`${feedback.rating} out of 5 stars`}>
+                    {Array.from({ length: 5 }, (_, index) => <Star key={index} className={`h-4 w-4 ${index < (feedback.rating || 0) ? 'fill-amber-400 text-amber-500' : 'text-gray-300'}`} aria-hidden="true" />)}
+                    <span className="ml-1 text-sm font-medium text-gray-700">{feedback.rating}/5</span>
+                  </div>
+                  {feedback.comment && <p className="mt-2 whitespace-pre-wrap text-sm text-gray-700">“{feedback.comment}”</p>}
+                  {feedback.submittedAt && <p className="mt-2 text-xs text-gray-500">Submitted {format(new Date(feedback.submittedAt), 'MMM d, yyyy')}</p>}
+                </div>
+              ) : <p className="mt-2 text-sm text-gray-600">{{ NOT_REQUESTED: 'Feedback not requested', SCHEDULED: 'Feedback request scheduled', SENT: 'Feedback request sent', SKIPPED_NO_EMAIL: 'Feedback skipped · no patient email', EXPIRED: 'Feedback request expired', FAILED: 'Feedback request failed' }[feedback?.status || 'NOT_REQUESTED'] || 'Feedback status unavailable'}</p>}
+            </section>
+          )}
 
           {/* Doctor */}
           {(booking.providerName || booking.structuredData?.doctorName) && (

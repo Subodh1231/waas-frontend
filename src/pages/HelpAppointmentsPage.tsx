@@ -42,6 +42,20 @@ const HelpAppointmentsPage = () => {
             </section>
 
             <section>
+              <h2 className="text-xl font-semibold text-gray-900">Patient feedback</h2>
+              <p className="mt-2 text-gray-600">
+                Patients may receive a feedback request after a completed appointment. Submitted ratings and comments are private to your clinic and remain linked to the visit and patient history. Open the Feedback section to review responses.
+              </p>
+            </section>
+
+            <section>
+              <h2 className="text-xl font-semibold text-gray-900">Patient feedback</h2>
+              <p className="mt-2 text-gray-600">
+                Feedback is associated with a completed appointment. Patients may receive a request after their visit, and submitted responses are private to the clinic. Open Feedback to review responses; each response stays linked to its patient and visit.
+              </p>
+            </section>
+
+            <section>
               <h2 className="text-xl font-semibold text-gray-900">What to verify when a booking is made</h2>
               <ol className="mt-3 list-decimal space-y-2 pl-5 text-gray-600">
                 <li>The patient name and contact details are correct.</li>

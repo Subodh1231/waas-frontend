@@ -518,6 +518,7 @@ export const cancelInvoice = async (invoiceId: string): Promise<Invoice> => {
 export interface PublicFeedbackInfo {
   clinicName: string;
   doctorName?: string | null;
+  alreadySubmitted: boolean;
 }
 
 export const getPublicFeedbackInfo = async (token: string): Promise<PublicFeedbackInfo> => {
@@ -785,6 +786,65 @@ export interface PatientFeedbackDeliveryStatus {
   scheduledAt: string;
   sentAt?: string | null;
 }
+
+export interface ClinicFeedbackItem {
+  appointmentId: string;
+  patientId: string;
+  patientName: string;
+  providerId?: string | null;
+  providerName?: string | null;
+  serviceName?: string | null;
+  appointmentAt?: string | null;
+  rating: number;
+  comment?: string | null;
+  submittedAt: string;
+}
+
+export interface FeedbackProviderOption {
+  providerId: string;
+  providerName: string;
+}
+
+export interface ClinicFeedbackPage {
+  items: ClinicFeedbackItem[];
+  totalResponses: number;
+  averageRating: number | null;
+  page: number;
+  size: number;
+  totalPages: number;
+  providers: FeedbackProviderOption[];
+}
+
+export interface AppointmentFeedbackView {
+  status: string;
+  rating?: number | null;
+  comment?: string | null;
+  submittedAt?: string | null;
+}
+
+export interface ClinicFeedbackFilters {
+  providerId?: string;
+  rating?: number;
+  from?: string;
+  to?: string;
+  page?: number;
+  size?: number;
+}
+
+export const getClinicFeedback = async (filters: ClinicFeedbackFilters = {}): Promise<ClinicFeedbackPage> => {
+  const response = await api.get('/api/feedback', { params: filters });
+  return response.data;
+};
+
+export const getAppointmentFeedback = async (appointmentId: string): Promise<AppointmentFeedbackView> => {
+  const response = await api.get(`/api/feedback/appointments/${appointmentId}`);
+  return response.data;
+};
+
+export const getPatientFeedbackSubmissions = async (patientId: string): Promise<ClinicFeedbackItem[]> => {
+  const response = await api.get(`/api/feedback/patients/${patientId}`);
+  return response.data;
+};
 
 export const getPatientFeedbackDeliveryStatus = async (patientId: string): Promise<PatientFeedbackDeliveryStatus[]> => {
   const response = await api.get(`/api/notifications/patients/${patientId}/feedback-status`);
