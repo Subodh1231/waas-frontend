@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Settings, Building2, Clock, DollarSign, Bell, CreditCard, Globe, Users, QrCode } from 'lucide-react';
+import { Settings, Building2, Clock, DollarSign, Bell, CreditCard, Globe, Users, QrCode, User } from 'lucide-react';
 import { QRCodeCanvas } from 'qrcode.react';
 import { Link, useSearchParams } from 'react-router-dom';
 import api, { getApiErrorMessage, getClinicReadiness, type ClinicReadiness } from '../lib/api';
@@ -42,6 +42,11 @@ interface ReminderSettings {
   timing2hr: number;
   messageTemplate24hr: string;
   messageTemplate2hr: string;
+}
+
+interface AccountInfo {
+  email: string;
+  role: string;
 }
 
 const LANGUAGES = [
@@ -94,6 +99,12 @@ const SettingsPage = () => {
   const [readinessLoading, setReadinessLoading] = useState(true);
   const [readinessError, setReadinessError] = useState('');
   const [copyError, setCopyError] = useState('');
+  const [accountInfo, setAccountInfo] = useState<AccountInfo | null>(null);
+  const [accountLoading, setAccountLoading] = useState(false);
+  const [accountError, setAccountError] = useState('');
+  const [passwordResetLoading, setPasswordResetLoading] = useState(false);
+  const [passwordResetMessage, setPasswordResetMessage] = useState('');
+  const [passwordResetError, setPasswordResetError] = useState('');
   
   // Form states
   const [profileData, setProfileData] = useState({
@@ -164,7 +175,7 @@ const SettingsPage = () => {
 
   useEffect(() => {
     const section = searchParams.get('section');
-    const supportedSections = ['profile', 'booking-page', 'language', 'staff', 'whatsapp', 'reminders', 'payment'];
+    const supportedSections = ['profile', 'account', 'booking-page', 'language', 'staff', 'whatsapp', 'reminders', 'payment'];
     if (section && supportedSections.includes(section)) {
       setActiveSection(section);
     }
@@ -212,6 +223,47 @@ const SettingsPage = () => {
       showToast('Failed to load settings', 'error');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchAccountInfo = useCallback(async () => {
+    setAccountLoading(true);
+    setAccountError('');
+    try {
+      const response = await api.get<AccountInfo>('/api/auth/me');
+      setAccountInfo(response.data);
+    } catch (error: unknown) {
+      setAccountInfo(null);
+      setAccountError(getApiErrorMessage(error, 'Could not load account information.'));
+    } finally {
+      setAccountLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeSection === 'account') {
+      void fetchAccountInfo();
+    }
+  }, [activeSection, fetchAccountInfo]);
+
+  const sendPasswordResetLink = async () => {
+    if (!accountInfo?.email) {
+      setPasswordResetError('The account email is not available. Reload the account details and try again.');
+      return;
+    }
+
+    setPasswordResetLoading(true);
+    setPasswordResetMessage('');
+    setPasswordResetError('');
+    try {
+      const response = await api.post<{ message?: string }>('/api/auth/forgot-password', {
+        email: accountInfo.email
+      });
+      setPasswordResetMessage(response.data.message || 'If an account exists with this email, you will receive a password reset link shortly.');
+    } catch (error: unknown) {
+      setPasswordResetError(getApiErrorMessage(error, 'Could not request a password reset link.'));
+    } finally {
+      setPasswordResetLoading(false);
     }
   };
 
@@ -357,7 +409,7 @@ const SettingsPage = () => {
       {/* Header */}
       <div className="px-8 pt-6 pb-4 shrink-0">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Settings</h1>
-        <p className="text-gray-600">Manage your clinic configuration</p>
+        <p className="text-gray-600">Manage your clinic and account settings</p>
       </div>
 
       <div className="px-8 pb-8 flex-1 overflow-auto">
@@ -376,6 +428,19 @@ const SettingsPage = () => {
               >
                 <Building2 className="w-5 h-5" />
                 <span>Clinic Profile</span>
+              </button>
+
+              <button
+                onClick={() => setActiveSection('account')}
+                aria-current={activeSection === 'account' ? 'page' : undefined}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
+                  activeSection === 'account'
+                    ? 'bg-blue-50 text-blue-700 font-medium'
+                    : 'text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                <User className="w-5 h-5" />
+                <span>Account &amp; Security</span>
               </button>
 
               <button
@@ -587,6 +652,67 @@ const SettingsPage = () => {
                   </button>
                 </div>
               </form>
+            </div>
+          )}
+
+          {/* Account & Security Section */}
+          {activeSection === 'account' && (
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center gap-3 mb-2">
+                <User className="w-6 h-6 text-blue-600" />
+                <h2 className="text-2xl font-bold text-gray-900">Account &amp; Security</h2>
+              </div>
+              <p className="mb-6 text-gray-600">
+                Manage the details you use to sign in. These are separate from your clinic’s public contact details.
+              </p>
+
+              {accountLoading ? (
+                <p role="status" className="text-gray-600">Loading account details...</p>
+              ) : accountError ? (
+                <div role="alert" className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-800">
+                  <p>{accountError}</p>
+                  <button type="button" onClick={() => void fetchAccountInfo()} className="mt-3 font-semibold underline">
+                    Try again
+                  </button>
+                </div>
+              ) : accountInfo ? (
+                <div className="space-y-6">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="rounded-lg border border-gray-200 p-4">
+                      <p className="text-sm font-medium text-gray-500">Login email</p>
+                      <p className="mt-2 break-all font-semibold text-gray-900">{accountInfo.email}</p>
+                      <p className="mt-1 text-sm text-gray-600">Used to sign in to this account.</p>
+                    </div>
+                    <div className="rounded-lg border border-gray-200 p-4">
+                      <p className="text-sm font-medium text-gray-500">Account role</p>
+                      <p className="mt-2 font-semibold text-gray-900">
+                        {accountInfo.role === 'OWNER' ? 'Clinic owner' : accountInfo.role.toLowerCase().replace(/_/g, ' ')}
+                      </p>
+                    </div>
+                  </div>
+
+                  <section className="rounded-lg border border-gray-200 p-4">
+                    <h3 className="font-semibold text-gray-900">Password</h3>
+                    <p className="mt-1 text-sm text-gray-600">
+                      Send a password reset link to your login email.
+                    </p>
+                    {passwordResetMessage && (
+                      <p role="status" className="mt-3 text-sm text-green-700">{passwordResetMessage}</p>
+                    )}
+                    {passwordResetError && (
+                      <p role="alert" className="mt-3 text-sm text-red-700">{passwordResetError}</p>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => void sendPasswordResetLink()}
+                      disabled={passwordResetLoading}
+                      className="mt-4 rounded-lg bg-blue-600 px-4 py-2 font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-400"
+                    >
+                      {passwordResetLoading ? 'Sending...' : 'Send password reset link'}
+                    </button>
+                  </section>
+                </div>
+              ) : null}
             </div>
           )}
 
