@@ -8,7 +8,6 @@ import LoadingSpinner from './components/LoadingSpinner';
 const LandingPage = lazy(() => import('./pages/LandingPage'));
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const OnboardingPage = lazy(() => import('./pages/OnboardingPage'));
-const SetupPage = lazy(() => import('./pages/SetupPage'));
 const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'));
 const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage'));
 const TermsPage = lazy(() => import('./pages/TermsPage'));
@@ -51,9 +50,9 @@ function App() {
           <Route path="/c/:slug" element={<PublicClinicPage />} />
           <Route path="/f/:token" element={<PublicFeedbackPage />} />
 
-          {/* Setup route - protected but outside DashboardLayout */}
+          {/* Keep old setup links working without forcing the sequential wizard. */}
           <Route element={<ProtectedRoute />}>
-            <Route path="/setup" element={<SetupPage />} />
+            <Route path="/setup" element={<Navigate to="/dashboard" replace />} />
             <Route path="/settings/whatsapp/callback" element={<WhatsAppCallbackPage />} />
           </Route>
 

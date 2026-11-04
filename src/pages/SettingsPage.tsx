@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Settings, Building2, Clock, DollarSign, Bell, CreditCard, Globe, Users, QrCode } from 'lucide-react';
 import { QRCodeCanvas } from 'qrcode.react';
-import api from '../lib/api';
+import { Link, useSearchParams } from 'react-router-dom';
+import api, { getApiErrorMessage, getClinicReadiness, type ClinicReadiness } from '../lib/api';
 import WhatsAppSettingsTab from '../components/WhatsAppSettingsTab';
 import StaffManagementTab from '../components/StaffManagementTab';
 import BookingPosterTools from '../components/BookingPosterTools';
@@ -85,9 +86,14 @@ const CURRENCIES = [
 ];
 
 const SettingsPage = () => {
+  const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [tenant, setTenant] = useState<Tenant | null>(null);
   const [activeSection, setActiveSection] = useState<string>('profile');
+  const [readiness, setReadiness] = useState<ClinicReadiness | null>(null);
+  const [readinessLoading, setReadinessLoading] = useState(true);
+  const [readinessError, setReadinessError] = useState('');
+  const [copyError, setCopyError] = useState('');
   
   // Form states
   const [profileData, setProfileData] = useState({
@@ -126,20 +132,27 @@ const SettingsPage = () => {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [copied, setCopied] = useState(false);
 
-  const bookingPageUrl = tenant?.slug ? `${window.location.origin}/c/${tenant.slug}` : '';
+  const bookingSlug = readiness?.slug || tenant?.slug;
+  const bookingPageUrl = bookingSlug ? `${window.location.origin}/c/${bookingSlug}` : '';
 
   const copyBookingUrl = async () => {
     if (!bookingPageUrl) return;
-    await navigator.clipboard.writeText(bookingPageUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setCopyError('');
+    try {
+      await navigator.clipboard.writeText(bookingPageUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopyError('Could not copy the booking link. Please copy it from the field.');
+    }
   };
 
   const downloadQrCode = () => {
+    if (!readiness?.bookingReady || !bookingPageUrl) return;
     const canvas = document.getElementById('booking-qr-canvas') as HTMLCanvasElement | null;
     if (!canvas) return;
     const link = document.createElement('a');
-    link.download = `bookzi-qr-${tenant?.slug || 'clinic'}.png`;
+    link.download = `bookzi-qr-${bookingSlug || 'clinic'}.png`;
     link.href = canvas.toDataURL('image/png');
     link.click();
   };
@@ -148,6 +161,14 @@ const SettingsPage = () => {
     fetchTenantData();
     fetchReminderSettings();
   }, []);
+
+  useEffect(() => {
+    const section = searchParams.get('section');
+    const supportedSections = ['profile', 'booking-page', 'language', 'staff', 'whatsapp', 'reminders', 'payment'];
+    if (section && supportedSections.includes(section)) {
+      setActiveSection(section);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (toast) {
@@ -203,6 +224,25 @@ const SettingsPage = () => {
     }
   };
 
+  const fetchReadiness = useCallback(async () => {
+    setReadinessLoading(true);
+    setReadinessError('');
+    try {
+      setReadiness(await getClinicReadiness());
+    } catch (error: unknown) {
+      setReadiness(null);
+      setReadinessError(getApiErrorMessage(error, 'Could not verify whether online booking is ready.'));
+    } finally {
+      setReadinessLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeSection === 'booking-page') {
+      void fetchReadiness();
+    }
+  }, [activeSection, fetchReadiness]);
+
   const saveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!profileData.name.trim()) {
@@ -225,6 +265,7 @@ const SettingsPage = () => {
       await api.put('/api/tenants/me', updatedTenant);
       showToast('Clinic profile saved successfully', 'success');
       await fetchTenantData();
+      await fetchReadiness();
     } catch (error: any) {
       showToast(error.response?.data?.message || 'Failed to save profile', 'error');
     } finally {
@@ -557,7 +598,26 @@ const SettingsPage = () => {
                 <h2 className="text-2xl font-bold text-gray-900">Patient Booking Page</h2>
               </div>
 
-              {tenant?.slug ? (
+              {readinessLoading ? (
+                <p role="status" className="text-gray-600">Checking booking readiness...</p>
+              ) : readinessError || !readiness ? (
+                <div role="alert" className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-800">
+                  <p>{readinessError || 'Booking readiness could not be verified.'}</p>
+                  <button type="button" onClick={() => void fetchReadiness()} className="mt-3 font-semibold underline">
+                    Try again
+                  </button>
+                </div>
+              ) : !readiness.bookingReady ? (
+                <div className="rounded-lg border border-amber-200 bg-amber-50 p-5">
+                  <h3 className="font-semibold text-amber-950">Your booking page isn’t ready yet.</h3>
+                  <p className="mt-1 text-sm text-amber-900">
+                    Complete the required setup before sharing a booking link or QR code.
+                  </p>
+                  <Link to="/dashboard" className="mt-4 inline-flex rounded-lg bg-amber-700 px-4 py-2 font-semibold text-white hover:bg-amber-800 focus:outline-none focus:ring-2 focus:ring-amber-600 focus:ring-offset-2">
+                    Complete setup
+                  </Link>
+                </div>
+              ) : bookingPageUrl ? (
                 <div className="space-y-6">
                   <p className="text-gray-600">
                     Share this link or QR code so patients can book an appointment directly - no app required.
@@ -573,12 +633,14 @@ const SettingsPage = () => {
                         className="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-sm"
                       />
                       <button
+                        type="button"
                         onClick={copyBookingUrl}
                         className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
                       >
                         {copied ? 'Copied!' : 'Copy'}
                       </button>
                     </div>
+                    {copyError && <p role="alert" className="mt-2 text-sm text-red-700">{copyError}</p>}
                   </div>
 
                   <div>
@@ -606,18 +668,21 @@ const SettingsPage = () => {
                     </p>
                     <BookingPosterTools
                       bookingUrl={bookingPageUrl}
-                      clinicSlug={tenant.slug}
-                      clinicName={tenant.name}
-                      clinicLogoUrl={tenant.logoUrl}
-                      clinicPhone={tenant.phone}
-                      clinicAddress={tenant.address}
+                      clinicSlug={bookingSlug || ''}
+                      clinicName={tenant?.name || 'Clinic'}
+                      clinicLogoUrl={tenant?.logoUrl}
+                      clinicPhone={tenant?.phone}
+                      clinicAddress={tenant?.address}
                     />
                   </div>
                 </div>
               ) : (
-                <p className="text-gray-600">
-                  Complete clinic onboarding to get your public booking page and QR code.
-                </p>
+                <div role="alert" className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-800">
+                  <p>Your clinic is ready, but its booking link is unavailable. Please refresh readiness or contact support.</p>
+                  <button type="button" onClick={() => void fetchReadiness()} className="mt-3 font-semibold underline">
+                    Refresh
+                  </button>
+                </div>
               )}
             </div>
           )}

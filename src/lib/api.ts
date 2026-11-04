@@ -75,6 +75,30 @@ export interface CreateAvailabilityRequest {
   doctorName?: string;
 }
 
+export interface ClinicReadiness {
+  clinicProfileComplete: boolean;
+  doctorConfigured: boolean;
+  serviceConfigured: boolean;
+  availabilityConfigured: boolean;
+  bookingReady: boolean;
+  completedSteps: number;
+  totalSteps: number;
+  slug?: string;
+}
+
+export const getApiErrorMessage = (error: unknown, fallback: string): string => {
+  if (axios.isAxiosError<{ message?: unknown }>(error)) {
+    const message = error.response?.data?.message;
+    return typeof message === 'string' ? message : error.message || fallback;
+  }
+  return error instanceof Error ? error.message : fallback;
+};
+
+export const getClinicReadiness = async (): Promise<ClinicReadiness> => {
+  const response = await api.get<ClinicReadiness>('/api/onboarding/readiness');
+  return response.data;
+};
+
 // ============================================================================
 // AXIOS INSTANCE
 // ============================================================================
@@ -924,6 +948,14 @@ export const deleteAvailability = async (id: string): Promise<void> => {
  */
 export const bulkCreateAvailability = async (availabilities: CreateAvailabilityRequest[]): Promise<DoctorAvailability[]> => {
   const response = await api.post('/api/availability/bulk', availabilities);
+  return response.data;
+};
+
+export const replaceProviderAvailability = async (
+  providerId: string,
+  availabilities: CreateAvailabilityRequest[]
+): Promise<DoctorAvailability[]> => {
+  const response = await api.put(`/api/availability/provider/${providerId}/replace`, availabilities);
   return response.data;
 };
 

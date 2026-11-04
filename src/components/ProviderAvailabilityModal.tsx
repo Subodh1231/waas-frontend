@@ -1,13 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { X, Plus, Trash2, Clock, Calendar } from 'lucide-react';
 import type {
-  DoctorAvailability,
   CreateAvailabilityRequest,
 } from '../lib/api';
 import {
   getProviderAvailability,
-  deleteAvailability,
-  bulkCreateAvailability,
+  replaceProviderAvailability,
+  getApiErrorMessage,
 } from '../lib/api';
 
 interface ProviderAvailabilityModalProps {
@@ -41,25 +40,22 @@ export default function ProviderAvailabilityModal({
   providerId,
   providerName,
 }: ProviderAvailabilityModalProps) {
-  const [availability, setAvailability] = useState<DoctorAvailability[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hasLoaded, setHasLoaded] = useState(false);
+  const [loadError, setLoadError] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   
   // Track changes per day
   const [daySchedules, setDaySchedules] = useState<Record<number, TimeSlot[]>>({});
 
-  useEffect(() => {
-    if (isOpen) {
-      loadAvailability();
-    }
-  }, [isOpen, providerId]);
-
-  const loadAvailability = async () => {
+  const loadAvailability = useCallback(async () => {
     try {
       setLoading(true);
+      setLoadError('');
+      setHasLoaded(false);
+      setError('');
       const data = await getProviderAvailability(providerId);
-      setAvailability(data);
       
       // Group by day of week
       const grouped: Record<number, TimeSlot[]> = {};
@@ -74,12 +70,19 @@ export default function ProviderAvailabilityModal({
         });
       });
       setDaySchedules(grouped);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to load availability');
+      setHasLoaded(true);
+    } catch (err: unknown) {
+      setLoadError(getApiErrorMessage(err, 'Failed to load availability'));
     } finally {
       setLoading(false);
     }
-  };
+  }, [providerId]);
+
+  useEffect(() => {
+    if (isOpen) {
+      void loadAvailability();
+    }
+  }, [isOpen, loadAvailability]);
 
   const addTimeSlot = (dayOfWeek: number) => {
     setDaySchedules((prev) => ({
@@ -113,17 +116,11 @@ export default function ProviderAvailabilityModal({
   };
 
   const handleSave = async () => {
+    if (!hasLoaded) return;
     try {
       setSaving(true);
       setError('');
 
-      // Delete all existing availability for this provider
-      const deletePromises = availability.map((slot) =>
-        slot.id ? deleteAvailability(slot.id) : Promise.resolve()
-      );
-      await Promise.all(deletePromises);
-
-      // Create new availability slots
       const newSlots: CreateAvailabilityRequest[] = [];
       Object.entries(daySchedules).forEach(([day, slots]) => {
         slots.forEach((slot) => {
@@ -137,13 +134,11 @@ export default function ProviderAvailabilityModal({
         });
       });
 
-      if (newSlots.length > 0) {
-        await bulkCreateAvailability(newSlots);
-      }
+      await replaceProviderAvailability(providerId, newSlots);
 
       onClose();
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to save availability');
+    } catch (err: unknown) {
+      setError(getApiErrorMessage(err, 'Failed to save availability'));
     } finally {
       setSaving(false);
     }
@@ -192,6 +187,14 @@ export default function ProviderAvailabilityModal({
             </div>
           ) : (
             <div className="space-y-6">
+              {loadError && (
+                <div role="alert" className="rounded border border-red-200 bg-red-50 px-4 py-3 text-red-700">
+                  <p>{loadError}</p>
+                  <button type="button" onClick={() => void loadAvailability()} className="mt-2 font-semibold underline">
+                    Try loading again
+                  </button>
+                </div>
+              )}
               {error && (
                 <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
                   {error}
@@ -303,7 +306,7 @@ export default function ProviderAvailabilityModal({
           </button>
           <button
             onClick={handleSave}
-            disabled={saving || loading}
+            disabled={saving || loading || !hasLoaded}
             className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
           >
             {saving ? 'Saving...' : 'Save Availability'}

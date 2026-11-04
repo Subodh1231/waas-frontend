@@ -1,18 +1,12 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { CheckCircle2, ChevronLeft, Circle } from 'lucide-react';
+import { ChevronLeft, Circle, CheckCircle2 } from 'lucide-react';
 
 const tasks = [
-  'Clinic profile completed',
-  'First doctor added',
-  'Services configured',
-  'Doctor schedule configured',
-  'Receptionist can access Bookzi',
-  'Public booking page verified',
-  'QR code downloaded',
-  'Test patient booking completed',
-  'Appointment visible in clinic dashboard',
-  'Clinic ready to accept bookings',
+  'Clinic profile complete',
+  'At least one active doctor or provider added',
+  'At least one bookable service added',
+  'Availability configured for a provider',
 ];
 
 const HelpGettingStartedPage = () => {
@@ -38,21 +32,21 @@ const HelpGettingStartedPage = () => {
           <p className="text-sm font-semibold uppercase tracking-wide text-blue-600">Getting started</p>
           <h1 className="mt-3 text-3xl font-bold text-gray-900">Clinic Setup & Go-Live Guide</h1>
           <p className="mt-3 max-w-3xl text-gray-600">
-            This guide follows the real Bookzi setup flow that exists in the current app. It is designed for a clinic owner or admin who wants to go live without founder support.
+            Create your account, verify your email, then complete the setup checklist from your dashboard whenever you are ready.
           </p>
 
           <div className="mt-8 space-y-8">
             <section id="setup">
-              <h2 className="text-xl font-semibold text-gray-900">1. Sign in and start onboarding</h2>
+              <h2 className="text-xl font-semibold text-gray-900">1. Create your account</h2>
               <p className="mt-2 text-gray-600">
-                From the landing page, use the <span className="font-medium text-gray-900">Get Started Free</span> or <span className="font-medium text-gray-900">Login</span> option. A new clinic is configured through the onboarding flow and then lands in the clinic dashboard.
+                Choose <span className="font-medium text-gray-900">Get Started Free</span>, enter your clinic name, email and password, and verify your email. You’ll go straight to the Bookzi dashboard; clinic setup is not a blocking wizard.
               </p>
             </section>
 
             <section>
-              <h2 className="text-xl font-semibold text-gray-900">2. Complete the clinic profile</h2>
+              <h2 className="text-xl font-semibold text-gray-900">2. Complete your clinic profile</h2>
               <p className="mt-2 text-gray-600">
-                In the setup flow, add the clinic address, phone number, and specialization. In the app settings area, the clinic profile can also be saved with contact information, branding, and clinic details.
+                From the dashboard checklist, choose <span className="font-medium text-gray-900">Complete clinic profile</span>. Your clinic name, phone, address and specialization are required before patients can book. Logo and other branding are optional.
               </p>
               <ul className="mt-3 list-disc space-y-2 pl-5 text-gray-600">
                 <li>Clinic name</li>
@@ -64,62 +58,57 @@ const HelpGettingStartedPage = () => {
             </section>
 
             <section>
-              <h2 className="text-xl font-semibold text-gray-900">3. Add your first doctor</h2>
+              <h2 className="text-xl font-semibold text-gray-900">3. Add a provider</h2>
               <p className="mt-2 text-gray-600">
-                The onboarding flow asks for doctor details such as name and qualifications. These are created as clinic staff profiles and are used later for appointment booking and scheduling.
+                Choose <span className="font-medium text-gray-900">Add your first doctor</span> in the checklist. Add at least one active doctor, nurse or therapist who will take appointments. You can add qualifications and other details later.
               </p>
               <ul className="mt-3 list-disc space-y-2 pl-5 text-gray-600">
-                <li>Doctor name</li>
-                <li>Qualifications</li>
-                <li>Doctor is marked active for booking</li>
+                <li>Provider name</li>
+                <li>Provider is active</li>
               </ul>
             </section>
 
             <section>
-              <h2 className="text-xl font-semibold text-gray-900">4. Configure services and consultation types</h2>
+              <h2 className="text-xl font-semibold text-gray-900">4. Add a service</h2>
               <p className="mt-2 text-gray-600">
-                Bookzi lets you define consultation types with a price and duration. The same data is also used in the services section of the clinic dashboard for ongoing updates.
+                Add at least one active, online-bookable service with a duration. Price is optional if it is not required by your clinic. Use the Services page to manage services later.
               </p>
               <ul className="mt-3 list-disc space-y-2 pl-5 text-gray-600">
-                <li>Service or consultation name</li>
-                <li>Price</li>
+                <li>Service name</li>
                 <li>Duration</li>
               </ul>
             </section>
 
             <section>
-              <h2 className="text-xl font-semibold text-gray-900">5. Set doctor working hours</h2>
+              <h2 className="text-xl font-semibold text-gray-900">5. Set provider availability</h2>
               <p className="mt-2 text-gray-600">
-                During onboarding, the app asks for working hours by day. This is the basis for patient availability in the booking flow. Bookzi supports selecting which weekdays are active and setting each day’s start and end time.
+                In Settings → Team & Staff, choose <span className="font-medium text-gray-900">Set Availability</span> for a provider and add at least one valid weekly time slot. Availability is provider-specific.
               </p>
             </section>
 
             <section>
-              <h2 className="text-xl font-semibold text-gray-900">6. Publish the public booking page</h2>
+              <h2 className="text-xl font-semibold text-gray-900">6. Go live and test booking</h2>
               <p className="mt-2 text-gray-600">
-                Once the clinic has a profile and at least one doctor/service setup, the public booking page is available from the Booking Page section in the app settings. The page is served under the clinic’s slug and opens at a URL like /c/clinic-slug in the browser.
+                When all four checklist items are complete, Bookzi marks the clinic ready and enables the public booking page. Use <span className="font-medium text-gray-900">Make a Test Booking</span> from the dashboard to try the real patient flow.
               </p>
             </section>
 
             <section>
-              <h2 className="text-xl font-semibold text-gray-900">7. Download the QR code</h2>
+              <h2 className="text-xl font-semibold text-gray-900">7. Share your booking link or QR code</h2>
               <p className="mt-2 text-gray-600">
-                In the <span className="font-medium text-gray-900">Settings → Booking Page</span> section, Bookzi provides a copyable booking URL and a QR code image. This is the exact flow used for sharing patient booking access with patients.
-              </p>
-              <p className="mt-2 text-gray-600">
-                The QR code can be downloaded and printed or shared digitally. The app specifically notes that patients can book without installing any app.
+                After your clinic is ready, open Settings → Booking Page to copy the link, download the QR code or create a booking poster. These sharing tools stay unavailable until the required clinic, provider, service and availability details are in place.
               </p>
             </section>
 
             <section>
-              <h2 className="text-xl font-semibold text-gray-900">8. Test a patient booking</h2>
+              <h2 className="text-xl font-semibold text-gray-900">Optional setup</h2>
               <p className="mt-2 text-gray-600">
-                Open the public booking page in a browser, choose a doctor and service, pick a date and available slot, then enter the patient name and phone number. After booking, check the clinic dashboard under <span className="font-medium text-gray-900">Appointments</span> to confirm the appointment appears.
+                WhatsApp, reminders, payment details, logo and additional staff are optional and do not block online booking. You can configure them later in Settings.
               </p>
             </section>
 
             <section className="rounded-2xl border border-gray-200 bg-gray-50 p-5">
-              <h2 className="text-xl font-semibold text-gray-900">Go-live checklist</h2>
+              <h2 className="text-xl font-semibold text-gray-900">Go-live essentials</h2>
               <div className="mt-4 space-y-3">
                 {tasks.map((task, index) => {
                   const isChecked = checked.includes(index);

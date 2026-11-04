@@ -1,15 +1,19 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { X, AlertCircle, CheckCircle, Clock, User, Calendar, FileText } from 'lucide-react';
 import {
   createAppointment,
   checkAvailability,
   getServiceProviders,
   searchPatients,
+  getClinicReadiness,
+  getApiErrorMessage,
   type CreateAppointmentRequest,
   type Staff,
   type PatientSearchResult,
   type AvailabilityCheckResponse,
   type ServiceItem,
+  type ClinicReadiness,
 } from '../lib/api';
 import api from '../lib/api';
 
@@ -32,6 +36,7 @@ export default function AddAppointmentModal({
   defaultProvider,
   defaultPatientId,
 }: AddAppointmentModalProps) {
+  const navigate = useNavigate();
   // Form state
   const [phone, setPhone] = useState('');
   const [patient, setPatient] = useState<PatientSearchResult | null>(null);
@@ -65,6 +70,26 @@ export default function AddAppointmentModal({
   const [availability, setAvailability] = useState<AvailabilityCheckResponse | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [readiness, setReadiness] = useState<ClinicReadiness | null>(null);
+  const [readinessLoading, setReadinessLoading] = useState(false);
+  const [readinessError, setReadinessError] = useState('');
+
+  const checkReadiness = useCallback(async () => {
+    setReadinessLoading(true);
+    setReadinessError('');
+    try {
+      setReadiness(await getClinicReadiness());
+    } catch (err: unknown) {
+      setReadiness(null);
+      setReadinessError(getApiErrorMessage(err, 'Could not verify the clinic setup.'));
+    } finally {
+      setReadinessLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isOpen) void checkReadiness();
+  }, [isOpen, checkReadiness]);
 
   // Load providers on mount
   useEffect(() => {
@@ -306,6 +331,75 @@ export default function AddAppointmentModal({
 
   if (!isOpen) return null;
 
+  if (readinessLoading) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div role="status" className="rounded-xl bg-white p-8 text-gray-700 shadow-xl">Checking clinic setup...</div>
+      </div>
+    );
+  }
+
+  if (!readiness || readinessError || !readiness.bookingReady) {
+    const tasks = [
+      { key: 'clinicProfileComplete', label: 'Complete clinic profile', href: '/settings?section=profile' },
+      { key: 'doctorConfigured', label: 'Add a doctor', href: '/settings?section=staff' },
+      { key: 'serviceConfigured', label: 'Add a service', href: '/services' },
+      { key: 'availabilityConfigured', label: 'Set availability', href: '/settings?section=staff' },
+    ] as const;
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true" aria-labelledby="appointment-setup-title">
+        <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 id="appointment-setup-title" className="text-xl font-bold text-gray-900">Complete your clinic setup first</h2>
+              <p className="mt-2 text-sm text-gray-600">
+                Bookzi needs the following before an appointment can be created:
+              </p>
+            </div>
+            <button type="button" onClick={onClose} aria-label="Close" className="text-gray-500 hover:text-gray-800">
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+          {readinessError || !readiness ? (
+            <div role="alert" className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+              <p>{readinessError || 'Clinic setup could not be loaded.'}</p>
+              <button type="button" onClick={() => void checkReadiness()} className="mt-2 font-semibold underline">Try again</button>
+            </div>
+          ) : (
+            <ul className="mt-4 space-y-3">
+              {tasks.map((task) => {
+                const complete = readiness[task.key];
+                return (
+                  <li key={task.key} className="flex items-center justify-between gap-3">
+                    <span className={complete ? 'text-green-800' : 'text-gray-800'}>
+                      {complete ? '✓ Completed: ' : '○ '}{task.label}
+                    </span>
+                    {!complete && (
+                      <button
+                        type="button"
+                        onClick={() => { onClose(); navigate(task.href); }}
+                        className="rounded-lg px-3 py-1.5 text-sm font-semibold text-blue-700 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        Continue
+                      </button>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+          <button
+            type="button"
+            onClick={() => { onClose(); navigate('/dashboard'); }}
+            className="mt-6 w-full rounded-lg bg-blue-600 px-4 py-2.5 font-semibold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          >
+            View setup checklist
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
@@ -433,11 +527,11 @@ export default function AddAppointmentModal({
                       </p>
                       <div className="flex gap-3">
                         <a
-                          href="/setup"
+                          href="/dashboard"
                           className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-yellow-800 bg-yellow-100 hover:bg-yellow-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
                           onClick={onClose}
                         >
-                          Complete Setup Wizard
+                          View Setup Checklist
                         </a>
                         <a
                           href="/settings"

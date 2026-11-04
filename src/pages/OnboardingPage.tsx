@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import EmailVerificationModal from '../components/EmailVerificationModal';
+import { isAuthenticated } from '../lib/auth';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 
@@ -15,6 +16,12 @@ interface ClinicDetails {
 const OnboardingPage = () => {
   const navigate = useNavigate();
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (isAuthenticated()) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [navigate]);
   
   // Email verification state
   const [showVerificationModal, setShowVerificationModal] = useState(false);
@@ -93,10 +100,10 @@ const OnboardingPage = () => {
     }
   };
   
-  // Handle successful verification - redirect to /setup for progressive onboarding
+  // Email verification creates the account; setup can be completed from the dashboard.
   const handleVerified = () => {
     setShowVerificationModal(false);
-    navigate('/setup');
+    navigate('/dashboard');
   };
 
   return (

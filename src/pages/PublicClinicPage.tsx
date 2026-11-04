@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Phone, MapPin, Calendar, Clock, CheckCircle2, Loader2 } from 'lucide-react';
+import axios from 'axios';
 import {
   getPublicClinic,
   getPublicSlots,
   createPublicBooking,
+  getApiErrorMessage,
   type PublicClinic,
   type PublicDoctor,
   type PublicService,
@@ -31,6 +33,7 @@ const PublicClinicPage = () => {
   const [clinic, setClinic] = useState<PublicClinic | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [bookingNotReady, setBookingNotReady] = useState(false);
 
   const [selectedDoctor, setSelectedDoctor] = useState<PublicDoctor | null>(null);
   const [selectedService, setSelectedService] = useState<PublicService | null>(null);
@@ -57,7 +60,14 @@ const PublicClinicPage = () => {
         if (data.doctors.length === 1) setSelectedDoctor(data.doctors[0]);
         if (data.services.length === 1) setSelectedService(data.services[0]);
       })
-      .catch(() => setNotFound(true))
+      .catch((error: unknown) => {
+        if (axios.isAxiosError<{ error?: string }>(error)
+          && error.response?.data?.error === 'BOOKING_NOT_READY') {
+          setBookingNotReady(true);
+        } else {
+          setNotFound(true);
+        }
+      })
       .finally(() => setLoading(false));
   }, [slug]);
 
@@ -129,8 +139,8 @@ const PublicClinicPage = () => {
         patientEmail: patientEmail.trim() || undefined,
       });
       setConfirmation(result);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Could not book this slot. Please try another time.');
+    } catch (err: unknown) {
+      setError(getApiErrorMessage(err, 'Could not book this slot. Please try another time.'));
     } finally {
       setSubmitting(false);
     }
@@ -145,6 +155,16 @@ const PublicClinicPage = () => {
   }
 
   if (notFound || !clinic) {
+    if (bookingNotReady) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+          <div className="max-w-md text-center">
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Online booking is being set up</h1>
+            <p className="text-gray-600">Please contact the clinic directly to arrange an appointment.</p>
+          </div>
+        </div>
+      );
+    }
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
         <div className="text-center">

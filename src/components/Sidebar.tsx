@@ -6,6 +6,7 @@ const Sidebar = () => {
   const location = useLocation();
 
   const menuItems = [
+    { path: '/dashboard', label: 'Dashboard' },
     { path: '/appointments', label: 'Appointments' },
     { path: '/invoices', label: 'Invoices' },
     { path: '/patients', label: 'Patients' },

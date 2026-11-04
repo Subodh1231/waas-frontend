@@ -633,31 +633,33 @@ const AppointmentsPage = () => {
           📋 List
         </button>
         
-        {viewMode === 'calendar' && (
-          <>
-            <div className="w-px bg-gray-300 mx-2"></div>
-            <button
-              onClick={() => setCalendarMode('week')}
-              className={`px-4 py-2 rounded font-medium transition-colors ${
-                calendarMode === 'week'
-                  ? 'bg-blue-100 text-blue-700 border border-blue-300'
-                  : 'bg-white text-gray-700 hover:bg-gray-50 border'
-              }`}
-            >
-              Week
-            </button>
-            <button
-              onClick={() => setCalendarMode('month')}
-              className={`px-4 py-2 rounded font-medium transition-colors ${
-                calendarMode === 'month'
-                  ? 'bg-blue-100 text-blue-700 border border-blue-300'
-                  : 'bg-white text-gray-700 hover:bg-gray-50 border'
-              }`}
-            >
-              Month
-            </button>
-          </>
-        )}
+        <div className="w-px bg-gray-300 mx-2"></div>
+        <button
+          onClick={() => {
+            setCalendarMode('week');
+            setViewMode('calendar');
+          }}
+          className={`px-4 py-2 rounded font-medium transition-colors ${
+            viewMode === 'calendar' && calendarMode === 'week'
+              ? 'bg-blue-100 text-blue-700 border border-blue-300'
+              : 'bg-white text-gray-700 hover:bg-gray-50 border'
+          }`}
+        >
+          Week
+        </button>
+        <button
+          onClick={() => {
+            setCalendarMode('month');
+            setViewMode('calendar');
+          }}
+          className={`px-4 py-2 rounded font-medium transition-colors ${
+            viewMode === 'calendar' && calendarMode === 'month'
+              ? 'bg-blue-100 text-blue-700 border border-blue-300'
+              : 'bg-white text-gray-700 hover:bg-gray-50 border'
+          }`}
+        >
+          Month
+        </button>
       </div>
       
       {/* Provider Filter */}
