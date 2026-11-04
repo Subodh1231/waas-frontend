@@ -1,10 +1,12 @@
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowRight,
+  Bell,
   Calendar,
   Check,
   ClipboardCheck,
   FileText,
+  MessageSquare,
   QrCode,
   Stethoscope,
   Users,
@@ -68,8 +70,9 @@ const LandingPage = () => {
               Give your clinic a simple <span className="text-blue-600">digital front desk.</span>
             </h1>
             <p className="mt-4 max-w-xl text-base leading-7 text-gray-600 sm:mt-6 sm:text-lg sm:leading-8">
-              Patients book through your clinic’s page or QR code. Your receptionist handles online,
-              phone, and walk-in appointments in the same Bookzi workflow.
+              Patients book through your clinic page or QR code. Your team manages online, phone, and
+              walk-in appointments, then sends email reminders, creates invoices, and requests feedback
+              in one Bookzi workflow.
             </p>
             <div className="mt-6 flex flex-col gap-3 sm:mt-8 sm:flex-row">
               <button
@@ -86,7 +89,7 @@ const LandingPage = () => {
               </a>
             </div>
             <p className="mt-4 text-sm text-gray-500">
-              Pilot basis · Email verification required
+              No app required for patients · Complete setup at your own pace
             </p>
           </div>
 
@@ -170,19 +173,47 @@ const LandingPage = () => {
         </div>
       </section>
 
+      <section className="w-full bg-blue-50 px-4 py-16 sm:px-8">
+        <div className="mx-auto max-w-7xl">
+          <div className="mx-auto max-w-2xl text-center">
+            <p className="text-sm font-semibold uppercase tracking-wide text-blue-700">One connected patient journey</p>
+            <h2 className="mt-3 text-3xl font-bold text-gray-900 sm:text-4xl">From booking to follow-up</h2>
+            <p className="mt-4 text-gray-600">Bookzi keeps the essential steps around a clinic visit connected, while your team stays in control.</p>
+          </div>
+          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {[
+              { number: '01', title: 'Book', text: 'Patients book using your clinic page or QR code.' },
+              { number: '02', title: 'Confirm', text: 'Send a confirmation email when a patient provides an email address.' },
+              { number: '03', title: 'Remind', text: 'Enable optional 24-hour and 2-hour email reminders when an email address is available.' },
+              { number: '04', title: 'Visit', text: 'Your team manages online, phone, and walk-in appointments in Bookzi.' },
+              { number: '05', title: 'Invoice', text: 'Create an invoice or receipt, then print it, save it as a PDF, or email it to a confirmed recipient.' },
+              { number: '06', title: 'Follow up', text: 'Request feedback after a completed visit and review responses privately.' },
+            ].map(({ number, title, text }) => (
+              <article key={number} className="rounded-xl border border-blue-100 bg-white p-5 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-bold text-blue-600">{number}</span>
+                  <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+                </div>
+                <p className="mt-2 leading-6 text-gray-600">{text}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Demonstrate the actual clinic setup and patient-to-clinic journey. */}
       <section id="how-it-works" className="w-full scroll-mt-8 bg-white px-4 py-16 sm:px-8">
         <div className="mx-auto max-w-7xl">
           <div className="mx-auto max-w-2xl text-center">
-            <p className="text-sm font-semibold uppercase tracking-wide text-blue-600">Simple clinic booking flow</p>
-            <h2 className="mt-3 text-3xl font-bold text-gray-900 sm:text-4xl">Set up, share, manage</h2>
-            <p className="mt-4 text-gray-600">A practical path from clinic setup to a patient booking in your appointment workspace.</p>
+            <p className="text-sm font-semibold uppercase tracking-wide text-blue-600">Progressive clinic setup</p>
+            <h2 className="mt-3 text-3xl font-bold text-gray-900 sm:text-4xl">Create your account. Set up at your own pace.</h2>
+            <p className="mt-4 text-gray-600">Verify your email, then use the dashboard checklist to get ready for patient bookings—without a long setup wizard.</p>
           </div>
           <div className="mt-12 grid gap-6 md:grid-cols-3">
             {[
-              { number: '01', title: 'Set up your clinic', text: 'Create your account, verify your email, then add clinic details, doctors, consultation services, and working hours.', icon: Stethoscope },
-              { number: '02', title: 'Share your page', text: 'Find your clinic-specific booking URL in Settings. Copy the link or download its QR code to share with patients.', icon: QrCode },
-              { number: '03', title: 'Manage appointments', text: 'Patients submit their details and see a booking confirmation. The appointment is added to the same Bookzi workflow your team uses.', icon: Calendar },
+              { number: '01', title: 'Create your clinic account', text: 'Enter your clinic and email details, create a password, and verify your email to reach the dashboard.', icon: Stethoscope },
+              { number: '02', title: 'Complete the essentials', text: 'Add your clinic profile, doctor, services, and availability from the dashboard checklist, in any order.', icon: ClipboardCheck },
+              { number: '03', title: 'Go live when ready', text: 'Once booking is ready, preview your clinic page, download its QR code or print-ready poster, and start accepting appointments.', icon: QrCode },
             ].map(({ number, title, text, icon: Icon }) => (
               <article key={number} className="rounded-2xl border border-gray-200 bg-gray-50 p-6">
                 <div className="flex items-center justify-between">
@@ -191,6 +222,16 @@ const LandingPage = () => {
                 </div>
                 <h3 className="mt-5 text-xl font-semibold text-gray-900">{title}</h3>
                 <p className="mt-2 leading-7 text-gray-600">{text}</p>
+                {number === '02' && (
+                  <ul aria-label="Example clinic setup checklist" className="mt-4 space-y-2 rounded-xl border border-gray-200 bg-white p-4 text-sm text-gray-700">
+                    {['Complete clinic profile', 'Add your first doctor', 'Add a service', 'Set availability'].map((item) => (
+                      <li key={item} className="flex items-center gap-2">
+                        <span aria-hidden="true" className="h-4 w-4 shrink-0 rounded border border-gray-300" />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </article>
             ))}
           </div>
@@ -222,13 +263,14 @@ const LandingPage = () => {
                 <p className="text-sm font-semibold uppercase tracking-wide text-indigo-600">QR code for your clinic page</p>
                 <h2 className="mt-2 text-2xl font-bold text-gray-900">Put your booking link where your patients already are.</h2>
                 <p className="mt-3 leading-7 text-gray-600">
-                  Download the QR code from Settings → Booking Page, or share your clinic link. Scanning opens the clinic page; patients choose a slot and submit their details.
+                  Download your clinic QR code or a ready-to-print booking poster from Settings → Booking Page. Patients scan the code to open your clinic page, choose a slot, and submit their details.
                 </p>
                 <div className="mt-5 flex flex-wrap gap-2 text-sm font-medium text-gray-700">
-                  {['Reception desk', 'Prescription', 'Visiting card', 'WhatsApp', 'Website', 'Social media'].map((place) => (
+                  {['Reception desk', 'Clinic entrance', 'Visiting card', 'Prescription', 'Website', 'Social media'].map((place) => (
                     <span key={place} className="rounded-full bg-gray-100 px-3 py-2">{place}</span>
                   ))}
                 </div>
+                <p className="mt-3 text-sm text-gray-600">You can also share the booking link manually through WhatsApp or email.</p>
                 <p className="mt-4 text-xs text-gray-500">Illustrative QR—encodes the sample URL above, not a live clinic.</p>
               </div>
             </div>
@@ -267,25 +309,35 @@ const LandingPage = () => {
             <p className="mx-auto mt-3 max-w-2xl text-gray-600">Keep the online booking path connected to the work your clinic team already does.</p>
           </div>
           <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-            <article className="rounded-xl border border-blue-100 bg-blue-50/60 p-6 md:col-span-3">
+            <article className="rounded-xl border border-gray-200 bg-white p-6">
               <Calendar className="h-7 w-7 text-blue-600" />
-              <h3 className="mt-4 text-lg font-semibold text-gray-900">Get patients booked—and manage every appointment</h3>
-              <p className="mt-2 text-gray-600">Online bookings and appointments created by reception for phone calls or walk-ins appear in the same Bookzi appointment workflow. Bookzi checks for existing provider-time conflicts when an appointment is created.</p>
+              <h3 className="mt-4 text-lg font-semibold text-gray-900">Manage every appointment in one place</h3>
+              <p className="mt-2 text-gray-600">Online bookings and appointments created for phone calls or walk-ins stay in the same Bookzi workflow.</p>
             </article>
             <article className="rounded-xl border border-gray-200 bg-white p-6">
               <Users className="h-7 w-7 text-indigo-600" />
-              <h3 className="mt-4 text-lg font-semibold text-gray-900">Find patient records</h3>
-              <p className="mt-2 text-gray-600">Search patient records by name, phone, or email and review appointment-related information.</p>
+              <h3 className="mt-4 text-lg font-semibold text-gray-900">Keep patient history organized</h3>
+              <p className="mt-2 text-gray-600">Search patients by name, phone, or email and review visits, upcoming appointments, invoices, and feedback.</p>
             </article>
             <article className="rounded-xl border border-gray-200 bg-white p-6">
-              <ClipboardCheck className="h-7 w-7 text-green-600" />
-              <h3 className="mt-4 text-lg font-semibold text-gray-900">Set up doctors, services, and schedules</h3>
-              <p className="mt-2 text-gray-600">Configure doctors, bookable services, service durations, and working hours that determine the availability shown to patients.</p>
+              <Bell className="h-7 w-7 text-amber-600" />
+              <h3 className="mt-4 text-lg font-semibold text-gray-900">Keep patients informed</h3>
+              <p className="mt-2 text-gray-600">Send confirmation emails and optional 24-hour or 2-hour reminders when the patient provides an email address.</p>
             </article>
             <article className="rounded-xl border border-gray-200 bg-white p-6">
               <FileText className="h-7 w-7 text-violet-600" />
-              <h3 className="mt-4 text-lg font-semibold text-gray-900">Create patient invoices and receipts</h3>
-              <p className="mt-2 text-gray-600">After an appointment is completed, generate a prefilled invoice, review its items and payment details, then print it or save it as a PDF for the patient.</p>
+              <h3 className="mt-4 text-lg font-semibold text-gray-900">Generate and send patient invoices</h3>
+              <p className="mt-2 text-gray-600">Create an invoice or receipt, record payment details, print or save a PDF, or email it to a confirmed recipient.</p>
+            </article>
+            <article className="rounded-xl border border-gray-200 bg-white p-6">
+              <MessageSquare className="h-7 w-7 text-green-600" />
+              <h3 className="mt-4 text-lg font-semibold text-gray-900">Learn from completed visits</h3>
+              <p className="mt-2 text-gray-600">Request feedback after an appointment and review patient ratings and comments privately inside Bookzi.</p>
+            </article>
+            <article className="rounded-xl border border-gray-200 bg-white p-6">
+              <ClipboardCheck className="h-7 w-7 text-blue-600" />
+              <h3 className="mt-4 text-lg font-semibold text-gray-900">Set up doctors, services, and availability</h3>
+              <p className="mt-2 text-gray-600">Configure what patients can book and when appointment slots should be available.</p>
             </article>
           </div>
         </div>
@@ -314,16 +366,18 @@ const LandingPage = () => {
             {[
               { question: 'Does a patient need to install an app?', answer: 'No. Patients open the clinic booking page in a web browser from the clinic link or QR code.' },
               { question: 'Does my clinic get its own booking page?', answer: 'After clinic setup, the clinic has a clinic-specific URL. The page can show clinic details, doctors, and services enabled for online booking.' },
-              { question: 'What does a patient do to book?', answer: 'The patient chooses a doctor, service, date, and available slot, then enters their name and phone number. The page displays a booking confirmation after submission.' },
               { question: 'What happens if a patient calls the clinic instead?', answer: 'Your receptionist can create the appointment directly in Bookzi. Online, phone, and walk-in appointments are managed in the same appointment workflow.' },
-              { question: 'Does Bookzi check for overlapping appointments?', answer: 'When an appointment is created, Bookzi checks existing appointments for a time conflict with that provider. This check applies to online and receptionist-created bookings.' },
+              { question: 'Does Bookzi send appointment confirmations and reminders?', answer: 'Clinics can enable confirmation emails and optional 24-hour and 2-hour reminder emails. Messages can be sent when the patient has a valid email address.' },
+              { question: 'Can I create and send an invoice or receipt?', answer: 'Yes. Create an invoice or receipt for a completed appointment, print it, save it as a PDF, or email it to a confirmed recipient. Bookzi does not calculate GST or claim GST tax-invoice compliance.' },
+              { question: 'Can patients leave feedback after a visit?', answer: 'Yes. Bookzi can request feedback after a completed appointment. Submitted ratings and comments are kept private for the clinic to review.' },
+              { question: 'Do I need to complete everything during signup?', answer: 'No. After creating and verifying your clinic account, you go to the dashboard. Its checklist guides you through the setup needed before online booking is ready.' },
               { question: 'Can multiple doctors use Bookzi?', answer: 'The clinic setup and public booking flow support multiple doctors. Each doctor needs the relevant details and availability configured.' },
               { question: 'Can I cancel an appointment?', answer: 'Clinic staff can cancel eligible appointments from appointment details and provide a cancellation reason. Patient self-cancellation is not part of the current public booking flow.' },
-              { question: 'How do I get the clinic QR code?', answer: 'Open Settings → Booking Page to copy the clinic URL or download the QR code image.' },
-              { question: 'Can I create an invoice or receipt for a visit?', answer: 'Yes. After marking an appointment complete, clinic staff can generate an invoice with patient, clinic, doctor, and appointment details prefilled, review the items and payment status, then print it or save it as a PDF. Tax is entered as an amount; Bookzi does not currently calculate GST or claim GST tax-invoice compliance.' },
+              { question: 'Can I share a QR code or booking poster?', answer: 'Yes. Open Settings → Booking Page to copy your clinic link, download its QR code, or prepare a print-ready booking poster.' },
+              { question: 'Does Bookzi check for overlapping appointments?', answer: 'When an appointment is created, Bookzi checks existing appointments for a time conflict with that provider. This check applies to online and receptionist-created bookings.' },
             ].map(({ question, answer }) => (
               <details key={question} className="group py-5">
-                <summary className="cursor-pointer list-none pr-8 font-semibold text-gray-900 marker:hidden">
+                <summary className="cursor-pointer list-none rounded pr-8 font-semibold text-gray-900 marker:hidden focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-600">
                   <span className="flex items-center justify-between gap-4">{question}<span className="text-xl text-blue-600 transition-transform group-open:rotate-45">+</span></span>
                 </summary>
                 <p className="mt-3 max-w-3xl leading-7 text-gray-600">{answer}</p>
@@ -336,15 +390,15 @@ const LandingPage = () => {
       {/* Pilot CTA */}
       <section className="w-full px-4 py-16 sm:px-8">
         <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-7 text-center text-white sm:p-12">
-          <h2 className="text-3xl font-bold mb-4">Ready to give your clinic a simpler way to manage appointments?</h2>
+          <h2 className="text-3xl font-bold mb-4">Ready to give your clinic a simpler digital front desk?</h2>
           <p className="mx-auto mb-8 max-w-2xl text-lg opacity-90 sm:text-xl">
-            Start your free pilot and get your clinic booking page + QR code.
+            Start your pilot, work through the dashboard checklist, and share your clinic booking page and QR code when you’re ready.
           </p>
           <button
             onClick={() => navigate('/onboarding')}
             className="px-8 py-4 bg-white text-blue-600 rounded-lg hover:bg-gray-100 font-semibold text-lg transition-colors shadow-lg"
           >
-            Start Your Free Pilot
+            Start your free pilot
           </button>
         </div>
       </section>
