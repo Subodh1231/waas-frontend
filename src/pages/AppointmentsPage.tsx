@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, startOfWeek, endOfWeek, isToday } from 'date-fns';
-import { Plus, Star } from 'lucide-react';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addDays, addMonths, parseISO, subMonths, startOfWeek, endOfWeek, isToday } from 'date-fns';
+import { CalendarDays, ChevronLeft, ChevronRight, Plus, Star } from 'lucide-react';
 import api from '../lib/api';
 import { getAppointmentFeedback, type AppointmentFeedbackView } from '../lib/api';
 import AddAppointmentModal from '../components/AddAppointmentModal';
@@ -28,6 +28,7 @@ interface Booking {
 
 type ViewMode = 'calendar' | 'list';
 type CalendarMode = 'week' | 'month';
+type StatusFilter = 'ALL' | 'PENDING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED';
 
 const AppointmentsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -36,6 +37,8 @@ const AppointmentsPage = () => {
   const [calendarMode, setCalendarMode] = useState<CalendarMode>('week');
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [currentWeek, setCurrentWeek] = useState(new Date());
+  const [mobileSelectedDate, setMobileSelectedDate] = useState(new Date());
+  const [mobileStatusFilter, setMobileStatusFilter] = useState<StatusFilter>('ALL');
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [bookingsByDate, setBookingsByDate] = useState<Record<string, Booking[]>>({});
   const [loading, setLoading] = useState(true);
@@ -204,67 +207,178 @@ const AppointmentsPage = () => {
 
   const renderMobileAgenda = () => {
     const filteredBookingsByDate = getFilteredBookingsByDate();
-    const dates = Object.keys(filteredBookingsByDate).sort();
-    const shiftRange = (direction: -1 | 1) => {
-      if (calendarMode === 'week') {
-        setCurrentWeek(new Date(currentWeek.getTime() + direction * 7 * 24 * 60 * 60 * 1000));
-      } else {
-        setCurrentMonth(direction < 0 ? subMonths(currentMonth, 1) : addMonths(currentMonth, 1));
-      }
+    const weekDays = eachDayOfInterval({
+      start: startOfWeek(currentWeek),
+      end: endOfWeek(currentWeek),
+    });
+    const selectedDateKey = format(mobileSelectedDate, 'yyyy-MM-dd');
+    const selectedDateBookings = (filteredBookingsByDate[selectedDateKey] || [])
+      .slice()
+      .sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime());
+    const visibleBookings = mobileStatusFilter === 'ALL'
+      ? selectedDateBookings
+      : selectedDateBookings.filter((booking) => booking.status === mobileStatusFilter);
+    const statusFilters: { value: StatusFilter; label: string }[] = [
+      { value: 'ALL', label: 'All' },
+      { value: 'PENDING', label: 'Pending' },
+      { value: 'CONFIRMED', label: 'Confirmed' },
+      { value: 'COMPLETED', label: 'Completed' },
+      { value: 'CANCELLED', label: 'Cancelled' },
+    ];
+    const setMobileDate = (date: Date) => {
+      setMobileSelectedDate(date);
+      setCurrentWeek(date);
+      setCalendarMode('week');
+      setViewMode('calendar');
+    };
+    const shiftWeek = (direction: -1 | 1) => {
+      setMobileDate(addDays(mobileSelectedDate, direction * 7));
     };
 
     return (
       <div className="space-y-3">
-        <div className="sticky top-0 z-10 flex items-center justify-between gap-2 rounded-lg border border-gray-200 bg-white p-2 shadow-sm">
-          <button type="button" onClick={() => shiftRange(-1)} aria-label={`Previous ${calendarMode}`} className="min-h-11 rounded-lg px-3 text-sm font-medium text-gray-700 hover:bg-gray-100">Previous</button>
-          <div className="text-center text-sm font-semibold text-gray-900">
-            {calendarMode === 'week'
-              ? `${format(startOfWeek(currentWeek), 'MMM d')} – ${format(endOfWeek(currentWeek), 'MMM d')}`
-              : format(currentMonth, 'MMMM yyyy')}
+        <div className="space-y-3 rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
+          <div className="flex items-center gap-1">
+            <button type="button" onClick={() => shiftWeek(-1)} aria-label="Previous week" className="flex min-h-11 min-w-11 items-center justify-center rounded-lg text-gray-700 hover:bg-gray-100">
+              <ChevronLeft className="h-5 w-5" aria-hidden="true" />
+            </button>
+            <p className="min-w-0 flex-1 text-center text-sm font-semibold text-gray-900">
+              {format(startOfWeek(currentWeek), 'MMM d')} – {format(endOfWeek(currentWeek), 'MMM d')}
+            </p>
+            <button type="button" onClick={() => shiftWeek(1)} aria-label="Next week" className="flex min-h-11 min-w-11 items-center justify-center rounded-lg text-gray-700 hover:bg-gray-100">
+              <ChevronRight className="h-5 w-5" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setMobileDate(new Date())}
+              className="min-h-11 rounded-lg px-2 text-sm font-semibold text-blue-700 hover:bg-blue-50"
+            >
+              Today
+            </button>
+            <label className="relative flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50">
+              <span className="sr-only">Jump to date</span>
+              <CalendarDays className="h-5 w-5" aria-hidden="true" />
+              <input
+                type="date"
+                value={format(mobileSelectedDate, 'yyyy-MM-dd')}
+                onChange={(event) => {
+                  if (event.target.value) setMobileDate(parseISO(event.target.value));
+                }}
+                aria-label="Jump to appointment date"
+                className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+              />
+            </label>
           </div>
-          <button type="button" onClick={() => shiftRange(1)} aria-label={`Next ${calendarMode}`} className="min-h-11 rounded-lg px-3 text-sm font-medium text-gray-700 hover:bg-gray-100">Next</button>
-          <button
-            type="button"
-            onClick={() => {
-              setCurrentWeek(new Date());
-              setCurrentMonth(new Date());
-            }}
-            className="min-h-11 rounded-lg px-3 text-sm font-semibold text-blue-700 hover:bg-blue-50"
-          >
-            Today
-          </button>
+          <div className="grid grid-cols-7 gap-1" role="group" aria-label="Choose appointment day">
+            {weekDays.map((day) => {
+              const dateKey = format(day, 'yyyy-MM-dd');
+              const isSelected = isSameDay(day, mobileSelectedDate);
+              const count = (filteredBookingsByDate[dateKey] || []).length;
+              return (
+                <button
+                  key={dateKey}
+                  type="button"
+                  aria-label={`${format(day, 'EEEE, MMMM d')}${count ? `, ${count} appointments` : ''}`}
+                  aria-pressed={isSelected}
+                  onClick={() => setMobileDate(day)}
+                  className={`flex min-h-16 min-w-0 flex-col items-center justify-center rounded-lg border px-1 py-2 text-xs ${isSelected ? 'border-blue-600 bg-blue-600 font-semibold text-white' : 'border-transparent text-gray-700 hover:border-gray-200 hover:bg-gray-50'}`}
+                >
+                  <span>{format(day, 'EEE')}</span>
+                  <span className="mt-1 text-sm font-semibold">{format(day, 'd')}</span>
+                  {count > 0 && <span className="sr-only">{count} appointments</span>}
+                </button>
+              );
+            })}
+          </div>
+          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-gray-100 pt-3">
+            <div aria-live="polite">
+              <h2 className="text-sm font-semibold text-gray-900">{format(mobileSelectedDate, 'EEEE, MMM d')}</h2>
+              <p className="text-xs text-gray-600">
+                {selectedDateBookings.length} appointment{selectedDateBookings.length === 1 ? '' : 's'}
+              </p>
+            </div>
+            <label htmlFor="mobile-provider-filter" className="sr-only">Filter by provider</label>
+            <select
+              id="mobile-provider-filter"
+              value={selectedProvider}
+              onChange={(event) => setSelectedProvider(event.target.value)}
+              className="min-h-11 max-w-[58%] rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
+            >
+              <option value="all">All providers</option>
+              {getUniqueProviders().map((provider) => (
+                <option key={provider} value={provider}>{provider}</option>
+              ))}
+            </select>
+          </div>
         </div>
-        {dates.map((date) => {
-          const dateBookings = filteredBookingsByDate[date]
-            .slice()
-            .sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime());
-          if (dateBookings.length === 0) return null;
-          return (
-            <section key={date} aria-label={format(new Date(`${date}T00:00:00`), 'EEEE, MMMM d')} className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-              <h2 className="border-b border-gray-100 bg-gray-50 px-4 py-3 text-sm font-semibold text-gray-800">
-                {format(new Date(`${date}T00:00:00`), 'EEEE, MMMM d')}
-              </h2>
-              <ul className="divide-y divide-gray-100">
-                {dateBookings.map((booking) => (
-                  <li key={booking.id}>
-                    <button type="button" onClick={() => setSelectedBooking(booking)} className="flex min-h-16 w-full items-center justify-between gap-3 px-4 py-3 text-left hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500">
-                      <span className="min-w-0">
-                        <span className="block truncate font-semibold text-gray-900">{booking.customerName || 'Patient'}</span>
-                        <span className="mt-1 block truncate text-sm text-gray-600">{booking.serviceName}{booking.providerName ? ` · ${booking.providerName}` : ''}</span>
-                      </span>
-                      <span className="flex shrink-0 flex-col items-end gap-1">
-                        <span className="text-sm font-semibold text-gray-900">{format(new Date(booking.dateTime), 'h:mm a')}</span>
+
+        <div className="-mx-4 overflow-x-auto px-4 pb-1" role="group" aria-label="Filter appointments by status">
+          <div className="flex w-max min-w-full gap-2">
+            {statusFilters.map((filter) => {
+              const count = filter.value === 'ALL'
+                ? selectedDateBookings.length
+                : selectedDateBookings.filter((booking) => booking.status === filter.value).length;
+              const isSelected = mobileStatusFilter === filter.value;
+              return (
+                <button
+                  key={filter.value}
+                  type="button"
+                  aria-pressed={isSelected}
+                  onClick={() => setMobileStatusFilter(filter.value)}
+                  className={`min-h-11 shrink-0 rounded-full border px-3 text-sm ${isSelected ? 'border-blue-700 bg-blue-700 font-semibold text-white' : 'border-gray-300 bg-white font-medium text-gray-700 hover:bg-gray-50'}`}
+                >
+                  {filter.label} {count}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {visibleBookings.length > 0 ? (
+          <ul className="divide-y divide-gray-100 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+            {visibleBookings.map((booking) => {
+              const appointmentTime = format(new Date(booking.dateTime), 'h:mm a');
+              const providerName = booking.providerName || booking.structuredData?.doctorName;
+              return (
+                <li key={booking.id}>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedBooking(booking)}
+                    aria-label={`${appointmentTime}, ${booking.customerName || 'Patient'}, ${booking.status}. View details`}
+                    className="flex min-h-[76px] w-full items-center gap-3 px-3 py-3 text-left hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500"
+                  >
+                    <span className="w-[4.5rem] shrink-0 text-sm font-semibold text-gray-900">{appointmentTime}</span>
+                    <span className="min-w-0 flex-1">
+                      <span className="flex flex-wrap items-center gap-2">
+                        <span className="truncate font-semibold text-gray-900">{booking.customerName || 'Patient'}</span>
                         <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${booking.status === 'CONFIRMED' ? 'bg-green-100 text-green-800' : booking.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' : booking.status === 'CANCELLED' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-700'}`}>{booking.status}</span>
                       </span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          );
-        })}
-        {dates.every((date) => filteredBookingsByDate[date].length === 0) && (
-          <p className="rounded-xl border border-gray-200 bg-white p-6 text-center text-sm text-gray-600">No appointments in this period.</p>
+                      <span className="mt-1 block truncate text-sm text-gray-600">{booking.serviceName}</span>
+                      {providerName && <span className="block truncate text-xs text-gray-500">{providerName}</span>}
+                    </span>
+                    <ChevronRight className="h-4 w-4 shrink-0 text-gray-400" aria-hidden="true" />
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        ) : (
+          <div className="rounded-xl border border-gray-200 bg-white p-5 text-center">
+            <p className="text-sm text-gray-700">
+              {selectedDateBookings.length === 0
+                ? `No appointments scheduled for ${format(mobileSelectedDate, 'EEEE, MMMM d')}.`
+                : `No ${mobileStatusFilter.toLowerCase()} appointments on ${format(mobileSelectedDate, 'EEEE, MMMM d')}.`}
+            </p>
+            {mobileStatusFilter !== 'ALL' && selectedDateBookings.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setMobileStatusFilter('ALL')}
+                className="mt-2 min-h-11 px-3 text-sm font-semibold text-blue-700"
+              >
+                Clear filter
+              </button>
+            )}
+          </div>
         )}
       </div>
     );
@@ -646,24 +760,24 @@ const AppointmentsPage = () => {
   return (
     <div className="h-full w-full flex flex-col bg-gray-50">
       {/* Header */}
-      <div className="px-4 pt-4 pb-3 flex flex-col gap-3 justify-between items-stretch shrink-0 sm:px-8 sm:pt-6 sm:pb-4 sm:flex-row sm:items-start">
+      <div className="shrink-0 px-4 pb-2 pt-3 sm:px-8 sm:pt-6 sm:pb-4 lg:flex lg:flex-row lg:items-start lg:justify-between lg:gap-3">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">Appointments</h1>
-          <p className="text-gray-600">Manage and view your clinic appointments</p>
+          <h1 className="mb-1 text-2xl font-bold text-gray-800 lg:mb-2 lg:text-3xl">Appointments</h1>
+          <p className="hidden text-gray-600 lg:block">Manage and view your clinic appointments</p>
         </div>
         <button
           onClick={() => {
             setAppointmentPatientId(undefined);
             setShowAddModal(true);
           }}
-          className="min-h-11 flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors shadow-sm"
+          className="hidden min-h-11 items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 font-medium text-white shadow-sm transition-colors hover:bg-blue-700 lg:flex"
         >
           <Plus className="w-5 h-5" />
           New Appointment
         </button>
       </div>
 
-      <div className="px-4 shrink-0 sm:px-8">
+      <div className="hidden shrink-0 px-4 sm:px-8 lg:block">
       {/* Stats Cards */}
       <div
         className={`grid gap-4 mb-4 transition-all ${
@@ -756,10 +870,20 @@ const AppointmentsPage = () => {
       {/* Content */}
       <div className="flex-1 px-4 pb-24 overflow-auto sm:px-8 sm:pb-6">
       {loading ? (
-        <div className="bg-white rounded-lg shadow p-12 text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading appointments...</p>
-        </div>
+        <>
+          <div className="hidden rounded-lg bg-white p-12 text-center shadow lg:block">
+            <div className="mx-auto h-12 w-12 animate-spin rounded-full border-b-2 border-blue-600"></div>
+            <p className="mt-4 text-gray-600">Loading appointments...</p>
+          </div>
+          <div className="space-y-3 lg:hidden" aria-label="Loading appointments">
+            <div className="h-36 animate-pulse rounded-xl bg-white shadow-sm" />
+            <div className="space-y-3 rounded-xl border border-gray-200 bg-white p-4">
+              <div className="h-4 w-1/3 animate-pulse rounded bg-gray-200" />
+              <div className="h-14 animate-pulse rounded bg-gray-100" />
+              <div className="h-14 animate-pulse rounded bg-gray-100" />
+            </div>
+          </div>
+        </>
       ) : viewMode === 'calendar' ? (
         <>
           <div className="hidden h-full lg:block">
