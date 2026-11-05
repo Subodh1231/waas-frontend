@@ -401,20 +401,22 @@ export default function AddAppointmentModal({
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-stretch justify-stretch bg-black/50 p-0 sm:items-center sm:justify-center sm:p-4">
+      <div className="flex h-[100dvh] max-h-[100dvh] w-full max-w-2xl flex-col overflow-hidden bg-white shadow-2xl sm:h-auto sm:max-h-[90vh] sm:rounded-2xl">
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
-          <h2 className="text-2xl font-bold text-gray-900">New Appointment</h2>
+        <div className="sticky top-0 flex shrink-0 items-center justify-between border-b bg-white px-4 py-3 sm:px-6 sm:py-4">
+          <h2 className="text-xl font-bold text-gray-900 sm:text-2xl">New Appointment</h2>
           <button
+            type="button"
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition"
+            aria-label="Close appointment form"
+            className="flex h-11 w-11 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700"
           >
             <X className="w-6 h-6" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+        <form onSubmit={handleSubmit} className="flex-1 space-y-5 overflow-y-auto p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:space-y-6 sm:p-6">
           {/* Error Message */}
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
@@ -601,7 +603,7 @@ export default function AddAppointmentModal({
           </div>
 
           {/* Date & Time */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <Calendar className="w-4 h-4 inline mr-2" />
@@ -693,7 +695,7 @@ export default function AddAppointmentModal({
           <div className="border-t pt-4 space-y-4">
             <h3 className="text-sm font-semibold text-gray-700">Payment Information</h3>
             
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Payment Status *
@@ -760,18 +762,18 @@ export default function AddAppointmentModal({
           </div>
 
           {/* Actions */}
-          <div className="flex justify-end gap-3 pt-4 border-t">
+          <div className="sticky bottom-0 flex flex-col-reverse justify-end gap-2 border-t bg-white pt-4 sm:flex-row sm:gap-3">
             <button
               type="button"
               onClick={onClose}
-              className="px-6 py-2.5 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition"
+              className="min-h-11 rounded-lg border border-gray-300 px-6 py-2.5 font-medium text-gray-700 hover:bg-gray-50"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={submitting || (availability !== null && !availability.available)}
-              className="px-6 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              className="min-h-11 rounded-lg bg-blue-600 px-6 py-2.5 font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {submitting ? 'Booking...' : 'Book Appointment'}
             </button>

@@ -164,7 +164,7 @@ const PatientsPage = () => {
   }
 
   return (
-    <div className="h-screen w-full flex flex-col bg-gray-50">
+    <div className="h-full w-full flex flex-col bg-gray-50 pb-20 lg:pb-0">
       {/* Header */}
       <div className="px-4 pt-6 pb-4 shrink-0 sm:px-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Patients</h1>
@@ -176,9 +176,9 @@ const PatientsPage = () => {
       {/* Filters */}
       <div className="px-4 pb-4 shrink-0 sm:px-8">
         <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-        <div className="flex items-center gap-4 flex-wrap">
+        <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:gap-4 sm:flex-wrap">
           {/* Search */}
-          <div className="flex-1 min-w-[300px]">
+          <div className="w-full min-w-0 flex-1 sm:min-w-[300px]">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
@@ -197,7 +197,7 @@ const PatientsPage = () => {
             <select
               value={sourceFilter}
               onChange={(e) => setSourceFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="min-h-11 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 sm:w-auto"
             >
               <option value="ALL">All Sources</option>
               <option value="MANUAL">Manual Only</option>
@@ -210,7 +210,7 @@ const PatientsPage = () => {
           <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="min-h-11 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 sm:w-auto"
           >
             <option value="ALL">All Patients</option>
             <option value="NEW">New Patients</option>
@@ -221,7 +221,7 @@ const PatientsPage = () => {
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="min-h-11 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 sm:w-auto"
           >
             <option value="recent">Sort: Most Recent</option>
             <option value="oldest">Sort: Oldest First</option>
@@ -229,7 +229,7 @@ const PatientsPage = () => {
             <option value="revenue">Sort: Highest Revenue</option>
           </select>
 
-          <div className="ml-auto text-sm text-gray-600">
+          <div className="text-sm text-gray-600 sm:ml-auto">
             {filteredPatients.length} patient{filteredPatients.length !== 1 ? 's' : ''}
           </div>
         </div>
@@ -238,7 +238,7 @@ const PatientsPage = () => {
 
       {/* Patients Grid */}
       {filteredPatients.length === 0 ? (
-        <div className="bg-white rounded-lg shadow p-12 text-center mx-8">
+        <div className="mx-4 rounded-lg bg-white p-6 text-center shadow sm:mx-8 sm:p-12">
           <User className="w-16 h-16 text-gray-300 mx-auto mb-4" />
           <p className="text-gray-500 text-lg mb-4">
             {searchQuery ? 'No patients found matching your search' : 'No patients yet. Patients will appear here when appointments are created.'}
@@ -253,7 +253,42 @@ const PatientsPage = () => {
           )}
         </div>
       ) : (
-        <div className="flex-1 bg-white shadow border-t border-gray-200 overflow-hidden">
+        <>
+        <div className="flex-1 overflow-y-auto border-t border-gray-200 bg-white shadow lg:hidden">
+          <ul className="divide-y divide-gray-200">
+            {filteredPatients.map((patient) => (
+              <li key={patient.id} className="p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button type="button" onClick={() => handleViewHistory(patient.id)} className="break-words text-left font-semibold text-gray-900 underline-offset-2 hover:text-blue-700 hover:underline">
+                        {patient.name || 'Unknown'}
+                      </button>
+                      {patient.isNewPatient && <span className="rounded-full bg-yellow-100 px-2 py-0.5 text-xs text-yellow-800">New</span>}
+                    </div>
+                    {patient.phoneNumber
+                      ? <a href={`tel:${patient.phoneNumber}`} className="mt-1 inline-block min-h-11 py-2 text-sm text-blue-700">{patient.phoneNumber}</a>
+                      : <p className="mt-1 text-sm text-gray-500">No phone number</p>}
+                    {patient.email && <p className="break-all text-xs text-gray-500">{patient.email}</p>}
+                  </div>
+                  {getSourceBadge(patient)}
+                </div>
+                <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                  <div><dt className="text-xs text-gray-500">Visits</dt><dd className="font-medium text-gray-900">{patient.totalVisits}</dd></div>
+                  <div><dt className="text-xs text-gray-500">Paid revenue</dt><dd className="font-medium text-gray-900">{formatCurrency(patient.totalRevenue)}</dd></div>
+                  <div><dt className="text-xs text-gray-500">Last visit</dt><dd className="text-gray-700">{formatLastVisit(patient.lastVisitDate, patient.daysSinceLastVisit)}</dd></div>
+                  <div><dt className="text-xs text-gray-500">Next appointment</dt><dd className={patient.nextAppointmentDate ? 'text-green-700' : 'text-gray-500'}>{patient.nextAppointmentDate ? formatNextAppointment(patient.nextAppointmentDate) : 'None'}</dd></div>
+                </dl>
+                <div className="mt-3 flex gap-2">
+                  <button type="button" onClick={() => handleBookAppointment(patient.id)} className="min-h-11 flex-1 rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700">New appointment</button>
+                  <button type="button" onClick={() => handleViewHistory(patient.id)} className="min-h-11 flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50">View history</button>
+                  {patient.phoneNumber && <a href={`tel:${patient.phoneNumber}`} aria-label={`Call ${patient.name || 'patient'}`} className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-gray-300 text-blue-700"><Phone className="h-4 w-4" /></a>}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className="hidden flex-1 overflow-hidden border-t border-gray-200 bg-white shadow lg:block">
           <div className="h-full w-full overflow-auto">
             <table className="min-w-[1200px] w-full divide-y divide-gray-200">
               <thead className="bg-gray-50 sticky top-0 z-10">
@@ -389,6 +424,7 @@ const PatientsPage = () => {
             </table>
           </div>
         </div>
+        </>
       )}
     </div>
   );

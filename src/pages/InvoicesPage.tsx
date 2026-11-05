@@ -228,7 +228,7 @@ const InvoicesPage = () => {
 
   if (isComposer) {
     return (
-      <div className="h-screen overflow-y-auto bg-gray-50 px-4 py-6 sm:px-8">
+      <div className="h-full overflow-y-auto bg-gray-50 px-4 py-6 pb-24 sm:px-8 lg:pb-8">
         <div className="mx-auto max-w-4xl">
           <Link to="/appointments" className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-700"><ArrowLeft className="h-4 w-4" />Back to appointments</Link>
           <div className="mt-4 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-8">
@@ -307,20 +307,20 @@ const InvoicesPage = () => {
 
   if (invoiceId && invoice) {
     return (
-      <div className="h-screen overflow-y-auto bg-gray-100 px-4 py-6 sm:px-8">
+      <div className="h-full overflow-y-auto bg-gray-100 px-4 py-6 pb-24 sm:px-8 lg:pb-8">
         <style>{`@media print { @page { margin: 14mm; } body * { visibility: hidden !important; } .invoice-print, .invoice-print * { visibility: visible !important; } .invoice-print { position: fixed !important; top: 0 !important; left: 0 !important; width: 100% !important; max-width: none !important; margin: 0 !important; box-shadow: none !important; border: 0 !important; } .invoice-actions { display: none !important; } }`}</style>
-        <div className="invoice-actions mx-auto mb-4 flex max-w-4xl flex-wrap items-center justify-between gap-3">
+        <div className="invoice-actions mx-auto mb-4 flex max-w-4xl flex-col items-stretch justify-between gap-3 sm:flex-row sm:items-center">
           <Link to="/invoices" className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-700"><ArrowLeft className="h-4 w-4" />Invoices</Link>
           <div className="flex flex-wrap gap-2">
-            {invoice.status === 'ISSUED' && <button onClick={() => void openInvoiceEmailDialog()} className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Email Invoice</button>}
+            {invoice.status === 'ISSUED' && <button onClick={() => void openInvoiceEmailDialog()} className="min-h-11 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Email Invoice</button>}
             {invoice.status === 'ISSUED' && <>
               <select aria-label="Invoice payment method" value={detailPaymentMethod} onChange={(event) => setDetailPaymentMethod(event.target.value)} className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700">
                 <option value="CASH">Cash</option><option value="UPI">UPI</option><option value="CARD">Card</option><option value="BANK_TRANSFER">Bank transfer</option><option value="OTHER">Other</option>
               </select>
-              <button onClick={() => void handlePaymentChange(invoice.paymentStatus === 'PAID' ? 'UNPAID' : 'PAID', detailPaymentMethod)} className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700">Mark {invoice.paymentStatus === 'PAID' ? 'unpaid' : 'paid'}</button>
+              <button onClick={() => void handlePaymentChange(invoice.paymentStatus === 'PAID' ? 'UNPAID' : 'PAID', detailPaymentMethod)} className="min-h-11 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700">Mark {invoice.paymentStatus === 'PAID' ? 'unpaid' : 'paid'}</button>
             </>}
-            {invoice.status === 'ISSUED' && <button onClick={() => void handleCancel()} className="rounded-lg border border-red-200 bg-white px-3 py-2 text-sm font-medium text-red-700">Cancel invoice</button>}
-            <button onClick={() => window.print()} className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"><Printer className="h-4 w-4" />Print / Save PDF</button>
+            {invoice.status === 'ISSUED' && <button onClick={() => void handleCancel()} className="min-h-11 rounded-lg border border-red-200 bg-white px-3 py-2 text-sm font-medium text-red-700">Cancel invoice</button>}
+            <button onClick={() => window.print()} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"><Printer className="h-4 w-4" />Print / Save PDF</button>
           </div>
         </div>
         {notice && <div className="invoice-actions mx-auto mb-4 max-w-4xl rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-800">{notice}</div>}
@@ -337,7 +337,19 @@ const InvoicesPage = () => {
             <div><p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Bill to</p><p className="mt-2 font-semibold text-gray-900">{invoice.patientName}</p>{invoice.patientPhone && <p className="mt-1 text-sm text-gray-600">{invoice.patientPhone}</p>}</div>
             <div className="sm:text-right"><p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Consulting doctor</p><p className="mt-2 font-semibold text-gray-900">{invoice.providerName || '—'}</p><p className="mt-1 text-sm text-gray-600">Appointment date: {invoice.appointmentDate}</p></div>
           </section>
-          <div className="overflow-x-auto">
+          <div className="space-y-3 lg:hidden">
+            {invoice.items.map((item) => (
+              <div key={item.id} className="rounded-lg border border-gray-200 p-3">
+                <p className="break-words font-medium text-gray-800">{item.description}</p>
+                <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
+                  <p className="text-gray-600">Qty: {item.quantity}</p>
+                  <p className="text-right text-gray-600">Rate: {money(item.unitPrice, invoice.currency)}</p>
+                  <p className="col-span-2 text-right font-semibold text-gray-900">Amount: {money(item.lineTotal, invoice.currency)}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="hidden overflow-x-auto lg:block">
             <table className="w-full min-w-[560px] border-collapse text-sm">
               <thead><tr className="border-y border-gray-200 bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500"><th className="px-3 py-3">Description</th><th className="px-3 py-3 text-right">Qty</th><th className="px-3 py-3 text-right">Rate</th><th className="px-3 py-3 text-right">Amount</th></tr></thead>
               <tbody>{invoice.items.map((item) => <tr key={item.id} className="border-b border-gray-100"><td className="px-3 py-4 font-medium text-gray-800">{item.description}</td><td className="px-3 py-4 text-right text-gray-600">{item.quantity}</td><td className="px-3 py-4 text-right text-gray-600">{money(item.unitPrice, invoice.currency)}</td><td className="px-3 py-4 text-right font-medium text-gray-900">{money(item.lineTotal, invoice.currency)}</td></tr>)}</tbody>
@@ -360,7 +372,7 @@ const InvoicesPage = () => {
   }
 
   return (
-    <div className="h-screen overflow-y-auto bg-gray-50 px-4 py-6 sm:px-8">
+    <div className="h-full overflow-y-auto bg-gray-50 px-4 py-6 pb-24 sm:px-8 lg:pb-8">
       <div className="mx-auto max-w-6xl">
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
           <div><p className="text-sm font-semibold uppercase tracking-wide text-blue-600">Clinic billing</p><h1 className="mt-1 text-3xl font-bold text-gray-900">Invoices</h1><p className="mt-2 text-gray-600">Find and print invoices generated from completed appointments.</p></div>

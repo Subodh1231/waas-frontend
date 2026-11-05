@@ -56,11 +56,13 @@ const AppointmentsPage = () => {
 
   useEffect(() => {
     const patientId = searchParams.get('patientId');
-    if (!patientId) return;
-    setAppointmentPatientId(patientId);
+    const shouldCreateAppointment = searchParams.get('new') === '1';
+    if (!patientId && !shouldCreateAppointment) return;
+    if (patientId) setAppointmentPatientId(patientId);
     setShowAddModal(true);
     setSearchParams((current) => {
       current.delete('patientId');
+      current.delete('new');
       return current;
     }, { replace: true });
   }, [searchParams, setSearchParams]);
@@ -198,6 +200,74 @@ const AppointmentsPage = () => {
       filtered[date] = filterBookingsByProvider(bookingsByDate[date]);
     });
     return filtered;
+  };
+
+  const renderMobileAgenda = () => {
+    const filteredBookingsByDate = getFilteredBookingsByDate();
+    const dates = Object.keys(filteredBookingsByDate).sort();
+    const shiftRange = (direction: -1 | 1) => {
+      if (calendarMode === 'week') {
+        setCurrentWeek(new Date(currentWeek.getTime() + direction * 7 * 24 * 60 * 60 * 1000));
+      } else {
+        setCurrentMonth(direction < 0 ? subMonths(currentMonth, 1) : addMonths(currentMonth, 1));
+      }
+    };
+
+    return (
+      <div className="space-y-3">
+        <div className="sticky top-0 z-10 flex items-center justify-between gap-2 rounded-lg border border-gray-200 bg-white p-2 shadow-sm">
+          <button type="button" onClick={() => shiftRange(-1)} aria-label={`Previous ${calendarMode}`} className="min-h-11 rounded-lg px-3 text-sm font-medium text-gray-700 hover:bg-gray-100">Previous</button>
+          <div className="text-center text-sm font-semibold text-gray-900">
+            {calendarMode === 'week'
+              ? `${format(startOfWeek(currentWeek), 'MMM d')} – ${format(endOfWeek(currentWeek), 'MMM d')}`
+              : format(currentMonth, 'MMMM yyyy')}
+          </div>
+          <button type="button" onClick={() => shiftRange(1)} aria-label={`Next ${calendarMode}`} className="min-h-11 rounded-lg px-3 text-sm font-medium text-gray-700 hover:bg-gray-100">Next</button>
+          <button
+            type="button"
+            onClick={() => {
+              setCurrentWeek(new Date());
+              setCurrentMonth(new Date());
+            }}
+            className="min-h-11 rounded-lg px-3 text-sm font-semibold text-blue-700 hover:bg-blue-50"
+          >
+            Today
+          </button>
+        </div>
+        {dates.map((date) => {
+          const dateBookings = filteredBookingsByDate[date]
+            .slice()
+            .sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime());
+          if (dateBookings.length === 0) return null;
+          return (
+            <section key={date} aria-label={format(new Date(`${date}T00:00:00`), 'EEEE, MMMM d')} className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+              <h2 className="border-b border-gray-100 bg-gray-50 px-4 py-3 text-sm font-semibold text-gray-800">
+                {format(new Date(`${date}T00:00:00`), 'EEEE, MMMM d')}
+              </h2>
+              <ul className="divide-y divide-gray-100">
+                {dateBookings.map((booking) => (
+                  <li key={booking.id}>
+                    <button type="button" onClick={() => setSelectedBooking(booking)} className="flex min-h-16 w-full items-center justify-between gap-3 px-4 py-3 text-left hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500">
+                      <span className="min-w-0">
+                        <span className="block truncate font-semibold text-gray-900">{booking.customerName || 'Patient'}</span>
+                        <span className="mt-1 block truncate text-sm text-gray-600">{booking.serviceName}{booking.providerName ? ` · ${booking.providerName}` : ''}</span>
+                      </span>
+                      <span className="flex shrink-0 flex-col items-end gap-1">
+                        <span className="text-sm font-semibold text-gray-900">{format(new Date(booking.dateTime), 'h:mm a')}</span>
+                        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${booking.status === 'CONFIRMED' ? 'bg-green-100 text-green-800' : booking.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' : booking.status === 'CANCELLED' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-700'}`}>{booking.status}</span>
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          );
+        })}
+        {dates.every((date) => filteredBookingsByDate[date].length === 0) && (
+          <p className="rounded-xl border border-gray-200 bg-white p-6 text-center text-sm text-gray-600">No appointments in this period.</p>
+        )}
+      </div>
+    );
   };
 
   // Week Calendar rendering
@@ -574,9 +644,9 @@ const AppointmentsPage = () => {
   };
 
   return (
-    <div className="h-screen w-full flex flex-col bg-gray-50">
+    <div className="h-full w-full flex flex-col bg-gray-50">
       {/* Header */}
-      <div className="px-8 pt-6 pb-4 flex justify-between items-start shrink-0">
+      <div className="px-4 pt-4 pb-3 flex flex-col gap-3 justify-between items-stretch shrink-0 sm:px-8 sm:pt-6 sm:pb-4 sm:flex-row sm:items-start">
         <div>
           <h1 className="text-3xl font-bold text-gray-800 mb-2">Appointments</h1>
           <p className="text-gray-600">Manage and view your clinic appointments</p>
@@ -586,19 +656,19 @@ const AppointmentsPage = () => {
             setAppointmentPatientId(undefined);
             setShowAddModal(true);
           }}
-          className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors shadow-sm"
+          className="min-h-11 flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors shadow-sm"
         >
           <Plus className="w-5 h-5" />
           New Appointment
         </button>
       </div>
 
-      <div className="px-8 shrink-0">
+      <div className="px-4 shrink-0 sm:px-8">
       {/* Stats Cards */}
       <div
         className={`grid gap-4 mb-4 transition-all ${
           viewMode === 'calendar'
-            ? 'grid-cols-6'
+            ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-6'
             : 'grid-cols-2 md:grid-cols-6'
         }`}
       >
@@ -611,7 +681,7 @@ const AppointmentsPage = () => {
       </div>
 
       {/* View Toggle */}
-      <div className="flex gap-2 mb-6">
+      <div className="flex flex-wrap gap-2 mb-4 sm:mb-6">
         <button
           onClick={() => setViewMode('calendar')}
           className={`px-4 py-2 rounded font-medium transition-colors ${
@@ -663,7 +733,7 @@ const AppointmentsPage = () => {
       </div>
       
       {/* Provider Filter */}
-      <div className="flex items-center gap-3 mb-6">
+      <div className="flex flex-col items-stretch gap-2 mb-4 sm:flex-row sm:items-center sm:gap-3 sm:mb-6">
         <label htmlFor="provider-filter" className="text-sm font-medium text-gray-700">
           Filter by Provider:
         </label>
@@ -671,7 +741,7 @@ const AppointmentsPage = () => {
           id="provider-filter"
           value={selectedProvider}
           onChange={(e) => setSelectedProvider(e.target.value)}
-          className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+          className="min-h-11 w-full rounded-lg border border-gray-300 bg-white px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 sm:w-auto"
         >
           <option value="all">All Staff ({getUniqueProviders().length} provider{getUniqueProviders().length !== 1 ? 's' : ''})</option>
           {getUniqueProviders().map((provider) => (
@@ -684,14 +754,19 @@ const AppointmentsPage = () => {
       </div>
 
       {/* Content */}
-      <div className="flex-1 px-8 pb-6 overflow-auto">
+      <div className="flex-1 px-4 pb-24 overflow-auto sm:px-8 sm:pb-6">
       {loading ? (
         <div className="bg-white rounded-lg shadow p-12 text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading appointments...</p>
         </div>
       ) : viewMode === 'calendar' ? (
-        calendarMode === 'week' ? renderWeekCalendar() : renderCalendar()
+        <>
+          <div className="hidden h-full lg:block">
+            {calendarMode === 'week' ? renderWeekCalendar() : renderCalendar()}
+          </div>
+          <div className="h-full lg:hidden">{renderMobileAgenda()}</div>
+        </>
       ) : (
         renderListView()
       )}
@@ -936,21 +1011,23 @@ const BookingDetailModal = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-stretch justify-stretch bg-black/50 p-0 sm:items-center sm:justify-center sm:p-4">
+      <div className="flex h-[100dvh] max-h-[100dvh] w-full max-w-2xl flex-col overflow-hidden bg-white shadow-xl sm:h-auto sm:max-h-[90vh] sm:rounded-lg">
         {/* Modal Header */}
-        <div className="px-6 py-4 border-b flex justify-between items-center sticky top-0 bg-white">
-          <h2 className="text-2xl font-semibold text-gray-800">Appointment Details</h2>
+        <div className="sticky top-0 flex shrink-0 items-center justify-between border-b bg-white px-4 py-3 sm:px-6 sm:py-4">
+          <h2 className="text-xl font-semibold text-gray-800 sm:text-2xl">Appointment Details</h2>
           <button
+            type="button"
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 text-2xl leading-none"
+            aria-label="Close appointment details"
+            className="flex h-11 w-11 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700"
           >
             ✕
           </button>
         </div>
 
         {/* Modal Content */}
-        <div className="p-6 space-y-6">
+        <div className="flex-1 space-y-6 overflow-y-auto p-4 sm:p-6">
           {/* Status Badge */}
           <div>
             <span className={`
@@ -1062,7 +1139,7 @@ const BookingDetailModal = ({
               </div>
             ) : (
               <div className="space-y-3">
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                   <div>
                     <label className="block text-xs font-medium text-gray-600 mb-1">Status</label>
                     <select
@@ -1130,13 +1207,13 @@ const BookingDetailModal = ({
         </div>
 
         {/* Modal Actions */}
-        <div className="px-6 py-4 border-t bg-gray-50 flex gap-2 justify-end sticky bottom-0">
+        <div className="sticky bottom-0 flex shrink-0 flex-col gap-2 border-t bg-gray-50 px-4 py-3 sm:flex-row sm:justify-end sm:px-6 sm:py-4">
           {isCompleted && (
             <button
               onClick={() => navigate(existingInvoiceId
                 ? `/invoices/${existingInvoiceId}`
                 : `/invoices?appointmentId=${booking.id}`)}
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium"
+              className="min-h-11 rounded bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700"
             >
               {existingInvoiceId ? 'View Invoice' : 'Generate Invoice'}
             </button>
@@ -1144,7 +1221,7 @@ const BookingDetailModal = ({
           {booking.status === 'PENDING' && (
             <button
               onClick={() => onUpdateStatus(booking.id, 'CONFIRMED')}
-              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 font-medium"
+              className="min-h-11 rounded bg-green-600 px-4 py-2 font-medium text-white hover:bg-green-700"
             >
               ✓ Confirm
             </button>
@@ -1152,7 +1229,7 @@ const BookingDetailModal = ({
           {booking.status === 'CONFIRMED' && (
             <button
               onClick={() => onUpdateStatus(booking.id, 'COMPLETED')}
-              className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 font-medium"
+              className="min-h-11 rounded bg-gray-600 px-4 py-2 font-medium text-white hover:bg-gray-700"
             >
               ✓ Mark Complete
             </button>
@@ -1160,14 +1237,14 @@ const BookingDetailModal = ({
           {(booking.status === 'PENDING' || booking.status === 'CONFIRMED') && (
             <button
               onClick={() => onCancel(booking.id)}
-              className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 font-medium"
+              className="min-h-11 rounded bg-red-600 px-4 py-2 font-medium text-white hover:bg-red-700"
             >
               ✕ Cancel
             </button>
           )}
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-white text-gray-700 rounded hover:bg-gray-100 border font-medium"
+            className="min-h-11 rounded border bg-white px-4 py-2 font-medium text-gray-700 hover:bg-gray-100"
           >
             Close
           </button>

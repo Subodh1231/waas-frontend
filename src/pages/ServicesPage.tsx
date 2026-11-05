@@ -235,7 +235,7 @@ const ServicesPage = () => {
   }
 
   return (
-    <div className="h-screen w-full flex flex-col bg-gray-50">
+    <div className="h-full w-full flex flex-col bg-gray-50 pb-20 lg:pb-0">
       {/* Toast */}
       {toast && (
         <div className="fixed top-4 right-4 z-50 animate-fade-in">
@@ -250,7 +250,7 @@ const ServicesPage = () => {
       )}
 
       {/* Header */}
-      <div className="px-8 pt-6 pb-4 shrink-0 flex justify-between items-center">
+      <div className="shrink-0 flex flex-col items-stretch justify-between gap-3 px-4 pt-4 pb-3 sm:flex-row sm:items-center sm:px-8 sm:pt-6 sm:pb-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Service Catalog</h1>
           <p className="text-gray-600">
@@ -259,7 +259,7 @@ const ServicesPage = () => {
         </div>
         <button
           onClick={openAddModal}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          className="min-h-11 flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-white transition-colors hover:bg-blue-700"
         >
           <Plus className="w-5 h-5" />
           Add Service
@@ -267,9 +267,9 @@ const ServicesPage = () => {
       </div>
 
       {/* Filters */}
-      <div className="px-8 pb-4 shrink-0">
+      <div className="shrink-0 px-4 pb-4 sm:px-8">
         <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-        <div className="flex items-center gap-4 flex-wrap">
+        <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:gap-4 sm:flex-wrap">
           <div className="flex items-center gap-2">
             <Filter className="w-4 h-4 text-gray-500" />
             <span className="text-sm font-medium text-gray-700">Filters:</span>
@@ -278,7 +278,7 @@ const ServicesPage = () => {
           <select
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
-            className="px-3 py-1.5 border border-gray-300 rounded-md text-sm"
+            className="min-h-11 w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm sm:w-auto"
           >
             <option value="all">All Categories</option>
             {CATEGORIES.map((cat) => (
@@ -289,7 +289,7 @@ const ServicesPage = () => {
           <select
             value={providerFilter}
             onChange={(e) => setProviderFilter(e.target.value)}
-            className="px-3 py-1.5 border border-gray-300 rounded-md text-sm"
+            className="min-h-11 w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm sm:w-auto"
           >
             <option value="all">All Providers</option>
             <option value="">Unassigned</option>
@@ -301,14 +301,14 @@ const ServicesPage = () => {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-1.5 border border-gray-300 rounded-md text-sm"
+            className="min-h-11 w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm sm:w-auto"
           >
             <option value="all">All Status</option>
             <option value="active">Active Only</option>
             <option value="inactive">Inactive Only</option>
           </select>
 
-          <div className="ml-auto text-sm text-gray-600">
+          <div className="text-sm text-gray-600 sm:ml-auto">
             {filteredServices.length} of {services.length} services
           </div>
         </div>
@@ -327,7 +327,40 @@ const ServicesPage = () => {
           </button>
         </div>
       ) : (
-        <div className="flex-1 bg-white shadow border-t border-gray-200 overflow-hidden">
+        <>
+        <div className="flex-1 overflow-y-auto border-t border-gray-200 bg-white shadow lg:hidden">
+          <ul className="divide-y divide-gray-200">
+            {filteredServices.map((service) => (
+              <li key={service.id} className={`p-4 ${!service.isActive ? 'bg-gray-50 opacity-70' : ''}`}>
+                <div className="flex items-start gap-3">
+                  <span className="mt-1 h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: service.color || '#3B82F6' }} />
+                  <div className="min-w-0 flex-1">
+                    <h2 className="break-words font-semibold text-gray-900">{service.name}</h2>
+                    {service.description && <p className="mt-1 text-sm text-gray-600">{service.description}</p>}
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <span className="rounded-full px-2 py-1 text-xs font-medium" style={{ backgroundColor: `${CATEGORY_COLORS[service.category || 'General']}20`, color: CATEGORY_COLORS[service.category || 'General'] }}>{service.category || 'General'}</span>
+                      {!service.isActive && <span className="rounded-full bg-gray-200 px-2 py-1 text-xs font-medium text-gray-700">Inactive</span>}
+                      {service.isActive && service.onlineBookable && <span className="rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-700">Online</span>}
+                    </div>
+                  </div>
+                </div>
+                <dl className="mt-3 grid grid-cols-2 gap-3 text-sm">
+                  <div><dt className="text-xs text-gray-500">Provider</dt><dd className="text-gray-800">{getProviderName(service.providerId) || 'Unassigned'}</dd></div>
+                  <div><dt className="text-xs text-gray-500">Duration</dt><dd className="text-gray-800">{service.durationMinutes} min{service.bufferMinutes ? ` + ${service.bufferMinutes}m buffer` : ''}</dd></div>
+                  <div><dt className="text-xs text-gray-500">Price</dt><dd className="font-semibold text-gray-900">₹{service.price.toFixed(2)}</dd></div>
+                </dl>
+                <div className="mt-3 flex flex-wrap gap-2 border-t border-gray-100 pt-3">
+                  <button type="button" onClick={() => handleToggleActive(service)} className="min-h-11 flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700">
+                    {service.isActive ? 'Deactivate' : 'Activate'}
+                  </button>
+                  <button type="button" onClick={() => openEditModal(service)} className="min-h-11 flex-1 rounded-lg border border-blue-200 px-3 py-2 text-sm font-medium text-blue-700">Edit</button>
+                  <button type="button" onClick={() => handleDelete(service)} className="min-h-11 flex-1 rounded-lg border border-red-200 px-3 py-2 text-sm font-medium text-red-700">Delete</button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className="hidden flex-1 overflow-hidden border-t border-gray-200 bg-white shadow lg:block">
           <div className="h-full w-full overflow-auto">
             <table className="min-w-[1200px] w-full divide-y divide-gray-200">
               <thead className="bg-gray-50 sticky top-0 z-10">
@@ -447,12 +480,13 @@ const ServicesPage = () => {
             </table>
           </div>
         </div>
+        </>
       )}
 
       {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-stretch justify-stretch bg-black/50 p-0 sm:items-center sm:justify-center sm:p-4">
+          <div className="h-[100dvh] max-h-[100dvh] w-full max-w-2xl overflow-y-auto bg-white shadow-xl sm:h-auto sm:max-h-[90vh] sm:rounded-lg">
             <div className="p-6 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white">
               <h2 className="text-2xl font-bold text-gray-900">
                 {editingService ? 'Edit Service' : 'Add New Service'}
@@ -464,7 +498,7 @@ const ServicesPage = () => {
 
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               {/* Basic Info */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Service Name *

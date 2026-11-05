@@ -158,10 +158,10 @@ export default function ProviderAvailabilityModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-0 sm:p-4">
+      <div className="flex h-dvh max-h-dvh w-full flex-col overflow-hidden bg-white shadow-xl sm:h-auto sm:max-h-[90vh] sm:max-w-4xl sm:rounded-lg">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b">
+        <div className="flex items-center justify-between gap-3 border-b p-4 sm:p-6">
           <div>
             <h2 className="text-xl font-semibold text-gray-900">
               Set Availability
@@ -172,14 +172,14 @@ export default function ProviderAvailabilityModal({
           </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
+            className="flex min-h-11 min-w-11 shrink-0 items-center justify-center text-gray-400 hover:text-gray-600"
           >
             <X className="h-6 w-6" />
           </button>
         </div>
 
         {/* Body */}
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-180px)]">
+        <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:max-h-[calc(90vh-180px)] sm:p-6">
           {loading ? (
             <div className="text-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
@@ -203,7 +203,7 @@ export default function ProviderAvailabilityModal({
 
               {DAYS_OF_WEEK.map((day) => (
                 <div key={day.value} className="border rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-3">
+                  <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex items-center gap-2">
                       <Calendar className="h-5 w-5 text-gray-400" />
                       <h3 className="font-medium text-gray-900">{day.label}</h3>
@@ -212,14 +212,14 @@ export default function ProviderAvailabilityModal({
                       {daySchedules[day.value]?.length > 0 && (
                         <button
                           onClick={() => copyToAllDays(day.value)}
-                          className="text-xs text-blue-600 hover:text-blue-700"
+                          className="min-h-11 text-left text-xs text-blue-600 hover:text-blue-700"
                         >
                           Copy to all days
                         </button>
                       )}
                       <button
                         onClick={() => addTimeSlot(day.value)}
-                        className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700"
+                        className="flex min-h-11 items-center gap-1 text-sm text-blue-600 hover:text-blue-700"
                       >
                         <Plus className="h-4 w-4" />
                         Add Time Slot
@@ -237,18 +237,18 @@ export default function ProviderAvailabilityModal({
                     {daySchedules[day.value]?.map((slot, index) => (
                       <div
                         key={index}
-                        className="flex items-center gap-3 bg-gray-50 p-3 rounded"
+                        className="flex flex-col gap-3 rounded bg-gray-50 p-3 sm:flex-row sm:items-center sm:gap-3"
                       >
                         <Clock className="h-4 w-4 text-gray-400" />
                         
-                        <div className="flex items-center gap-2 flex-1">
+                        <div className="flex flex-1 flex-wrap items-center gap-2">
                           <input
                             type="time"
                             value={slot.startTime}
                             onChange={(e) =>
                               updateTimeSlot(day.value, index, 'startTime', e.target.value)
                             }
-                            className="border rounded px-2 py-1 text-sm"
+                            className="min-h-11 rounded border px-2 py-1 text-sm"
                           />
                           <span className="text-gray-500">to</span>
                           <input
@@ -257,7 +257,7 @@ export default function ProviderAvailabilityModal({
                             onChange={(e) =>
                               updateTimeSlot(day.value, index, 'endTime', e.target.value)
                             }
-                            className="border rounded px-2 py-1 text-sm"
+                            className="min-h-11 rounded border px-2 py-1 text-sm"
                           />
                         </div>
 
@@ -271,7 +271,7 @@ export default function ProviderAvailabilityModal({
                               parseInt(e.target.value)
                             )
                           }
-                          className="border rounded px-2 py-1 text-sm"
+                          className="min-h-11 w-full rounded border px-2 py-1 text-sm sm:w-auto"
                         >
                           {SLOT_DURATIONS.map((duration) => (
                             <option key={duration} value={duration}>
@@ -282,7 +282,7 @@ export default function ProviderAvailabilityModal({
 
                         <button
                           onClick={() => removeTimeSlot(day.value, index)}
-                          className="text-red-600 hover:text-red-700"
+                          className="flex min-h-11 min-w-11 self-end items-center justify-center text-red-600 hover:text-red-700 sm:self-auto"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
@@ -296,10 +296,10 @@ export default function ProviderAvailabilityModal({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 p-6 border-t bg-gray-50">
+        <div className="flex flex-col-reverse gap-3 border-t bg-gray-50 p-4 sm:flex-row sm:items-center sm:justify-end sm:p-6">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-gray-700 hover:text-gray-900"
+            className="min-h-11 w-full px-4 py-2 text-gray-700 hover:text-gray-900 sm:w-auto"
             disabled={saving}
           >
             Cancel
@@ -307,7 +307,7 @@ export default function ProviderAvailabilityModal({
           <button
             onClick={handleSave}
             disabled={saving || loading || !hasLoaded}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+            className="min-h-11 w-full rounded-lg bg-blue-600 px-6 py-2 text-white hover:bg-blue-700 disabled:opacity-50 sm:w-auto"
           >
             {saving ? 'Saving...' : 'Save Availability'}
           </button>

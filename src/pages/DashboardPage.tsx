@@ -1,13 +1,27 @@
 import { useCallback, useEffect, useState } from 'react';
-import { CheckCircle2, Circle, Copy, ExternalLink, Loader2 } from 'lucide-react';
+import { CheckCircle2, Circle, Copy, ExternalLink, Loader2, CalendarDays, Plus } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { format } from 'date-fns';
 import { getApiErrorMessage, getClinicReadiness, type ClinicReadiness } from '../lib/api';
+import api from '../lib/api';
+
+interface DashboardBooking {
+  id: string;
+  customerName: string;
+  serviceName: string;
+  dateTime: string;
+  status: string;
+  providerName?: string;
+}
 
 const DashboardPage = () => {
   const [readiness, setReadiness] = useState<ClinicReadiness | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [copyMessage, setCopyMessage] = useState('');
+  const [todayBookings, setTodayBookings] = useState<DashboardBooking[]>([]);
+  const [todayBookingsLoading, setTodayBookingsLoading] = useState(true);
+  const [todayBookingsError, setTodayBookingsError] = useState('');
 
   const loadReadiness = useCallback(async () => {
     setLoading(true);
@@ -24,6 +38,27 @@ const DashboardPage = () => {
   useEffect(() => {
     void loadReadiness();
   }, [loadReadiness]);
+
+  useEffect(() => {
+    const today = format(new Date(), 'yyyy-MM-dd');
+    const loadTodayBookings = async () => {
+      try {
+        const response = await api.get<{
+          status: string;
+          bookingsByDate?: Record<string, DashboardBooking[]>;
+        }>('/api/bookings/calendar', { params: { startDate: today, endDate: today } });
+        if (response.data.status !== 'success') {
+          throw new Error('The appointments response was not successful.');
+        }
+        setTodayBookings(response.data.bookingsByDate?.[today] || []);
+      } catch (err: unknown) {
+        setTodayBookingsError(getApiErrorMessage(err, 'Could not load today’s appointments.'));
+      } finally {
+        setTodayBookingsLoading(false);
+      }
+    };
+    void loadTodayBookings();
+  }, []);
 
   const copyBookingLink = async () => {
     if (!bookingUrl) return;
@@ -49,7 +84,7 @@ const DashboardPage = () => {
 
   if (error || !readiness) {
     return (
-      <main className="min-h-full bg-gray-50 px-4 py-8 sm:px-8">
+      <main className="h-full overflow-y-auto bg-gray-50 px-4 py-6 pb-24 sm:px-8 sm:py-8 lg:pb-8">
         <h1 className="mb-4 text-3xl font-bold text-gray-900">Dashboard</h1>
         <div role="alert" className="max-w-2xl rounded-lg border border-red-200 bg-red-50 p-5 text-red-800">
           <p>{error || 'Clinic setup could not be loaded.'}</p>
@@ -74,8 +109,13 @@ const DashboardPage = () => {
   const progress = readiness.completedSteps;
 
   return (
-    <main className="min-h-full bg-gray-50 px-4 py-8 sm:px-8">
-      <h1 className="mb-6 text-3xl font-bold text-gray-900">Dashboard</h1>
+    <main className="h-full overflow-y-auto bg-gray-50 px-4 py-6 pb-24 sm:px-8 sm:py-8 lg:pb-8">
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+        <Link to="/appointments?new=1" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
+          <Plus className="h-4 w-4" aria-hidden="true" /> New appointment
+        </Link>
+      </div>
 
       {!readiness.bookingReady ? (
         <section aria-labelledby="setup-title" className="max-w-3xl rounded-2xl border border-blue-100 bg-white p-5 shadow-sm sm:p-7">
@@ -102,7 +142,7 @@ const DashboardPage = () => {
             {tasks.map((task) => {
               const complete = readiness[task.key];
               return (
-                <li key={task.key} className="flex items-start gap-3 py-4">
+                <li key={task.key} className="flex flex-col items-start gap-3 py-4 sm:flex-row">
                   {complete
                     ? <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-green-600" aria-hidden="true" />
                     : <Circle className="mt-0.5 h-5 w-5 shrink-0 text-gray-400" aria-hidden="true" />}
@@ -114,7 +154,7 @@ const DashboardPage = () => {
                   </div>
                   <Link
                     to={task.href}
-                    className="shrink-0 rounded-lg px-3 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="inline-flex min-h-11 items-center rounded-lg px-3 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     {complete ? 'Review' : task.label}
                   </Link>
@@ -162,6 +202,41 @@ const DashboardPage = () => {
           </div>
         </section>
       )}
+
+      <section aria-labelledby="today-appointments-title" className="mt-6 max-w-3xl rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <CalendarDays className="h-5 w-5 text-blue-600" aria-hidden="true" />
+            <h2 id="today-appointments-title" className="text-lg font-semibold text-gray-900">Today’s appointments</h2>
+          </div>
+          <Link to="/appointments" className="min-h-11 inline-flex items-center font-semibold text-blue-700 hover:underline">View schedule</Link>
+        </div>
+        {todayBookingsLoading ? (
+          <p className="mt-4 text-sm text-gray-500">Loading today’s schedule…</p>
+        ) : todayBookingsError ? (
+          <p role="alert" className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{todayBookingsError}</p>
+        ) : todayBookings.length === 0 ? (
+          <p className="mt-4 rounded-lg bg-gray-50 p-4 text-sm text-gray-600">No appointments scheduled for today.</p>
+        ) : (
+          <ul className="mt-4 divide-y divide-gray-100">
+            {todayBookings
+              .filter((booking) => booking.status !== 'CANCELLED')
+              .sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime())
+              .map((booking) => (
+                <li key={booking.id} className="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0">
+                    <p className="truncate font-medium text-gray-900">{booking.customerName || 'Patient'}</p>
+                    <p className="text-sm text-gray-600">{booking.serviceName}{booking.providerName ? ` · ${booking.providerName}` : ''}</p>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <span className="font-semibold text-gray-900">{new Date(booking.dateTime).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}</span>
+                    <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-800">{booking.status}</span>
+                  </div>
+                </li>
+              ))}
+          </ul>
+        )}
+      </section>
     </main>
   );
 };

@@ -170,10 +170,10 @@ export default function ProviderServicesModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-0 sm:p-4">
+      <div className="flex h-dvh max-h-dvh w-full flex-col overflow-hidden bg-white shadow-xl sm:h-auto sm:max-h-[90vh] sm:max-w-3xl sm:rounded-lg">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b">
+        <div className="flex items-center justify-between gap-3 border-b p-4 sm:p-6">
           <div>
             <h2 className="text-xl font-semibold text-gray-900">
               Manage Services
@@ -184,14 +184,14 @@ export default function ProviderServicesModal({
           </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
+            className="flex min-h-11 min-w-11 shrink-0 items-center justify-center text-gray-400 hover:text-gray-600"
           >
             <X className="h-6 w-6" />
           </button>
         </div>
 
         {/* Body */}
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-180px)]">
+        <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:max-h-[calc(90vh-180px)] sm:p-6">
           {loading ? (
             <div className="text-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
@@ -207,13 +207,13 @@ export default function ProviderServicesModal({
 
               {/* Provider's Services */}
               <div>
-                <div className="flex items-center justify-between mb-3">
+                <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <h3 className="font-medium text-gray-900">
                     Assigned Services ({providerServices.length})
                   </h3>
                   <button
                     onClick={() => setShowAddService(true)}
-                    className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700"
+                    className="flex min-h-11 items-center gap-1 text-sm text-blue-600 hover:text-blue-700"
                   >
                     <Plus className="h-4 w-4" />
                     Create New Service
@@ -231,7 +231,7 @@ export default function ProviderServicesModal({
                     {providerServices.map((service) => (
                       <div
                         key={service.id}
-                        className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"
+                        className="flex flex-col gap-3 rounded-lg border p-4 hover:bg-gray-50 sm:flex-row sm:items-center sm:justify-between"
                       >
                         <div className="flex-1">
                           <h4 className="font-medium text-gray-900">{service.name}</h4>
@@ -240,7 +240,7 @@ export default function ProviderServicesModal({
                               {service.description}
                             </p>
                           )}
-                          <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
+                          <div className="mt-2 flex flex-wrap items-center gap-4 text-sm text-gray-500">
                             <span className="flex items-center gap-1">
                               <Clock className="h-4 w-4" />
                               {service.durationMinutes} min
@@ -251,18 +251,18 @@ export default function ProviderServicesModal({
                             </span>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 self-end sm:self-auto">
                           <button
                             onClick={() => handleUnassignService(service.id)}
                             disabled={saving}
-                            className="text-sm text-gray-600 hover:text-gray-900"
+                            className="min-h-11 px-2 text-sm text-gray-600 hover:text-gray-900"
                           >
                             Unassign
                           </button>
                           <button
                             onClick={() => handleDeleteService(service.id)}
                             disabled={saving}
-                            className="text-red-600 hover:text-red-700"
+                            className="flex min-h-11 min-w-11 items-center justify-center text-red-600 hover:text-red-700"
                           >
                             <Trash2 className="h-4 w-4" />
                           </button>
@@ -308,7 +308,7 @@ export default function ProviderServicesModal({
                       />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                           Duration (minutes) *
@@ -346,11 +346,11 @@ export default function ProviderServicesModal({
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 pt-2">
+                    <div className="flex flex-col gap-2 pt-2 sm:flex-row sm:items-center">
                       <button
                         onClick={handleCreateService}
                         disabled={saving || !newService.name || !newService.price}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                        className="min-h-11 w-full rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50 sm:w-auto"
                       >
                         {saving ? 'Creating...' : 'Create Service'}
                       </button>
@@ -359,7 +359,7 @@ export default function ProviderServicesModal({
                           setShowAddService(false);
                           setNewService({ name: '', description: '', duration: 30, price: '' });
                         }}
-                        className="px-4 py-2 text-gray-700 hover:text-gray-900"
+                        className="min-h-11 w-full px-4 py-2 text-gray-700 hover:text-gray-900 sm:w-auto"
                       >
                         Cancel
                       </button>
@@ -381,11 +381,11 @@ export default function ProviderServicesModal({
                     {availableClinicServices.map((service) => (
                       <div
                         key={service.id}
-                        className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"
+                        className="flex flex-col gap-3 rounded-lg border p-4 hover:bg-gray-50 sm:flex-row sm:items-center sm:justify-between"
                       >
                         <div className="flex-1">
                           <h4 className="font-medium text-gray-900">{service.name}</h4>
-                          <div className="flex items-center gap-4 mt-1 text-sm text-gray-500">
+                          <div className="mt-1 flex flex-wrap items-center gap-4 text-sm text-gray-500">
                             <span className="flex items-center gap-1">
                               <Clock className="h-4 w-4" />
                               {service.durationMinutes} min
@@ -399,7 +399,7 @@ export default function ProviderServicesModal({
                         <button
                           onClick={() => handleAssignService(service.id)}
                           disabled={saving}
-                          className="flex items-center gap-1 px-3 py-2 text-sm text-blue-600 hover:text-blue-700 border border-blue-600 rounded-lg hover:bg-blue-50"
+                          className="flex min-h-11 w-full items-center justify-center gap-1 rounded-lg border border-blue-600 px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 hover:text-blue-700 sm:w-auto"
                         >
                           <Check className="h-4 w-4" />
                           Assign
@@ -414,10 +414,10 @@ export default function ProviderServicesModal({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 p-6 border-t bg-gray-50">
+        <div className="flex justify-end border-t bg-gray-50 p-4 sm:p-6">
           <button
             onClick={onClose}
-            className="px-6 py-2 text-gray-700 hover:text-gray-900"
+            className="min-h-11 w-full px-6 py-2 text-gray-700 hover:text-gray-900 sm:w-auto"
           >
             Close
           </button>

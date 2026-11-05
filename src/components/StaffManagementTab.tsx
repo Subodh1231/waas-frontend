@@ -119,7 +119,7 @@ export default function StaffManagementTab() {
   return (
     <div className="bg-white shadow rounded-lg">
       {/* Header */}
-      <div className="px-6 py-4 border-b flex justify-between items-center">
+      <div className="flex flex-col gap-3 border-b px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
         <div>
           <h3 className="text-lg font-medium text-gray-900">Team Members</h3>
           <p className="mt-1 text-sm text-gray-500">
@@ -128,7 +128,7 @@ export default function StaffManagementTab() {
         </div>
         <button
           onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          className="flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 sm:w-auto"
         >
           <Plus className="w-4 h-4" />
           Add Staff Member
@@ -137,18 +137,18 @@ export default function StaffManagementTab() {
 
       {/* Messages */}
       {error && (
-        <div className="mx-6 mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-800">
+        <div className="mx-4 mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800 sm:mx-6">
           {error}
         </div>
       )}
       {success && (
-        <div className="mx-6 mt-4 p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-800">
+        <div className="mx-4 mt-4 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-800 sm:mx-6">
           {success}
         </div>
       )}
 
       {/* Staff List */}
-      <div className="p-6">
+      <div className="p-4 sm:p-6">
         {loading ? (
           <div className="text-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
@@ -171,10 +171,10 @@ export default function StaffManagementTab() {
                 key={member.id}
                 className="border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition"
               >
-                <div className="flex justify-between items-start">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div className="flex-1">
-                    <div className="flex items-center gap-3">
-                      <h4 className="text-lg font-semibold text-gray-900">{member.name}</h4>
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                      <h4 className="text-base font-semibold text-gray-900 sm:text-lg">{member.name}</h4>
                       <span className={`px-2 py-1 text-xs font-medium rounded ${getRoleBadgeColor(member.role)}`}>
                         {member.role}
                       </span>
@@ -199,31 +199,31 @@ export default function StaffManagementTab() {
                       <p className="text-sm text-gray-500 mt-1">{member.qualifications}</p>
                     )}
                     
-                    <div className="flex gap-4 mt-2 text-sm text-gray-600">
-                      {member.email && <span>📧 {member.email}</span>}
+                    <div className="mt-2 flex flex-col gap-1 text-sm text-gray-600 sm:flex-row sm:gap-4">
+                      {member.email && <span className="break-all">📧 {member.email}</span>}
                       {member.phone && <span>📱 {member.phone}</span>}
                     </div>
-                    <div className="flex items-center gap-2 text-sm">
+                    <div className="mt-1 flex flex-wrap items-center gap-2 text-sm">
                       <button
                         onClick={() => setServicesModalProvider(member)}
-                        className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                        className="min-h-11 py-2 font-medium text-blue-600 hover:text-blue-700"
                       >
                         Manage Services
                       </button>
                       <span className="text-gray-300">•</span>
                       <button
                         onClick={() => setAvailabilityModalProvider(member)}
-                        className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                        className="min-h-11 py-2 font-medium text-blue-600 hover:text-blue-700"
                       >
                         Set Availability
                       </button>
                     </div>
                   </div>
                   
-                  <div className="flex gap-2">
+                  <div className="flex self-end gap-2 sm:self-start">
                     <button
                       onClick={() => handleEdit(member)}
-                      className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded"
+                      className="min-h-11 min-w-11 rounded p-3 text-gray-600 hover:bg-blue-50 hover:text-blue-600"
                       title="Edit"
                     >
                       <Edit2 className="w-4 h-4" />
@@ -231,7 +231,7 @@ export default function StaffManagementTab() {
                     {member.isActive && (
                       <button
                         onClick={() => handleDeactivate(member.id)}
-                        className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded"
+                        className="min-h-11 min-w-11 rounded p-3 text-gray-600 hover:bg-red-50 hover:text-red-600"
                         title="Deactivate"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -247,9 +247,9 @@ export default function StaffManagementTab() {
 
       {/* Add/Edit Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="px-6 py-4 border-b flex justify-between items-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-0 sm:p-4">
+          <div className="h-dvh max-h-dvh w-full overflow-y-auto bg-white shadow-xl sm:h-auto sm:max-h-[90vh] sm:max-w-2xl sm:rounded-lg">
+            <div className="flex items-center justify-between border-b px-4 py-4 sm:px-6">
               <h3 className="text-lg font-semibold text-gray-900">
                 {editingStaff ? 'Edit Staff Member' : 'Add New Staff Member'}
               </h3>
@@ -258,9 +258,9 @@ export default function StaffManagementTab() {
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2">
+            <form onSubmit={handleSubmit} className="space-y-4 p-4 sm:p-6">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="sm:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Full Name *
                   </label>
@@ -304,7 +304,7 @@ export default function StaffManagementTab() {
                   />
                 </div>
 
-                <div className="col-span-2">
+                <div className="sm:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Qualifications
                   </label>
@@ -341,7 +341,7 @@ export default function StaffManagementTab() {
                   />
                 </div>
 
-                <div className="col-span-2">
+                <div className="sm:col-span-2">
                   <label className="flex items-center gap-2">
                     <input
                       type="checkbox"
@@ -354,17 +354,17 @@ export default function StaffManagementTab() {
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t">
+              <div className="flex flex-col-reverse gap-3 border-t pt-4 sm:flex-row sm:justify-end">
                 <button
                   type="button"
                   onClick={handleCloseModal}
-                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                  className="min-h-11 w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-50 sm:w-auto"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  className="min-h-11 w-full rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 sm:w-auto"
                 >
                   {editingStaff ? 'Update' : 'Add'} Staff Member
                 </button>

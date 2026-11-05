@@ -21,7 +21,7 @@ const Sidebar = () => {
   };
 
   return (
-    <aside className="w-60 bg-white border-r border-gray-200 flex flex-col">
+    <aside className="hidden w-60 shrink-0 bg-white border-r border-gray-200 lg:flex lg:flex-col">
       {/* Logo/Brand */}
       <div className="h-16 flex items-center px-6 border-b border-gray-200">
         <h1 className="text-xl font-bold text-blue-600">Bookzi</h1>

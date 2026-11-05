@@ -155,7 +155,7 @@ const PatientDetailPage = () => {
   const submissionByAppointment = new Map(submittedFeedback.map((item) => [item.appointmentId, item]));
 
   return (
-    <div className="h-screen overflow-y-auto bg-gray-50 px-4 py-6 sm:px-8">
+    <div className="h-full overflow-y-auto bg-gray-50 px-4 py-6 pb-24 sm:px-8 lg:pb-8">
       <div className="mx-auto max-w-5xl">
         <Link to="/patients" className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-700"><ArrowLeft className="h-4 w-4" />Back to patients</Link>
         {notice && <p role="status" className="mt-3 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-800">{notice}</p>}
@@ -197,21 +197,57 @@ const PatientDetailPage = () => {
           {completedAppointments.length === 0 ? (
             <p className="mt-4 rounded-lg bg-gray-50 p-4 text-sm text-gray-600">No completed visits yet.</p>
           ) : (
-            <div className="mt-4 overflow-x-auto">
+            <>
+            <div className="mt-4 space-y-3 lg:hidden">
+              {completedAppointments.map((appointment) => (
+                <article key={appointment.id} className="rounded-xl border border-gray-200 p-4">
+                  <p className="font-semibold text-gray-900">{appointment.startTime ? new Date(appointment.startTime).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : 'Completed visit'}</p>
+                  <p className="mt-1 text-sm text-gray-600">{appointment.providerName || '—'} · {appointment.serviceName || '—'}</p>
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <span className="rounded-full bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-800">Completed</span>
+                    {appointment.invoiceId
+                      ? <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${appointment.invoiceStatus === 'CANCELLED' ? 'bg-red-100 text-red-800' : appointment.invoicePaymentStatus === 'PAID' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}`}>{appointment.invoiceStatus === 'CANCELLED' ? 'Invoice cancelled' : `Invoice · ${appointment.invoicePaymentStatus || 'UNPAID'}`}</span>
+                      : <span className="text-xs text-gray-500">No invoice</span>}
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-3 text-sm font-medium">
+                    {appointment.invoiceId
+                      ? <><Link to={`/invoices/${appointment.invoiceId}`} className="min-h-11 inline-flex items-center text-blue-700">View invoice</Link><button type="button" onClick={() => setEmailDialog({ type: 'invoice', id: appointment.invoiceId! })} className="min-h-11 text-gray-700">Email invoice</button></>
+                      : <Link to={`/invoices?appointmentId=${appointment.id}`} className="min-h-11 inline-flex items-center text-blue-700">Generate invoice</Link>}
+                    {!appointment.invoiceId && <button type="button" onClick={() => setEmailDialog({ type: 'feedback', id: appointment.id })} className="min-h-11 text-blue-700">Request feedback</button>}
+                  </div>
+                </article>
+              ))}
+            </div>
+            <div className="mt-4 hidden overflow-x-auto lg:block">
               <table className="w-full min-w-[560px] text-left text-sm">
                 <thead><tr className="border-b text-xs uppercase tracking-wide text-gray-500"><th className="py-3 pr-4">Date</th><th className="py-3 pr-4">Doctor</th><th className="py-3 pr-4">Service</th><th className="py-3 pr-4">Status</th><th className="py-3 pr-4">Invoice</th><th className="py-3 pr-4">Document</th><th className="py-3">Actions</th></tr></thead>
                 <tbody>{completedAppointments.map((appointment) => <tr key={appointment.id} className="border-b border-gray-100"><td className="py-3 pr-4 text-gray-700">{appointment.startTime ? new Date(appointment.startTime).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : '—'}</td><td className="py-3 pr-4 text-gray-700">{appointment.providerName || '—'}</td><td className="py-3 pr-4 text-gray-700">{appointment.serviceName || '—'}</td><td className="py-3 pr-4"><span className="rounded-full bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-800">Completed</span></td><td className="py-3 pr-4">{appointment.invoiceId ? <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${appointment.invoiceStatus === 'CANCELLED' ? 'bg-red-100 text-red-800' : appointment.invoicePaymentStatus === 'PAID' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}`}>{appointment.invoiceStatus === 'CANCELLED' ? 'Invoice cancelled' : `Invoice · ${appointment.invoicePaymentStatus || 'UNPAID'}`}</span> : <span className="text-xs text-gray-500">Not generated</span>}</td><td className="py-3">{appointment.invoiceId ? <Link to={`/invoices/${appointment.invoiceId}`} className="whitespace-nowrap font-medium text-blue-600 hover:underline">View Invoice</Link> : <div className="flex flex-col items-start gap-1"><span className="text-xs text-gray-500">Not generated</span><Link to={`/invoices?appointmentId=${appointment.id}`} className="whitespace-nowrap font-medium text-blue-600 hover:underline">Generate Invoice</Link></div>}</td><td className="py-3">{appointment.invoiceId ? <div className="flex flex-wrap gap-2"><Link to={`/invoices/${appointment.invoiceId}`} className="whitespace-nowrap font-medium text-blue-600 hover:underline">View</Link><button type="button" onClick={() => setEmailDialog({ type: 'invoice', id: appointment.invoiceId! })} className="whitespace-nowrap font-medium text-gray-700 hover:text-blue-700">Email</button></div> : <button type="button" onClick={() => setEmailDialog({ type: 'feedback', id: appointment.id })} className="whitespace-nowrap font-medium text-blue-600 hover:underline">Send feedback request</button>}</td></tr>)}</tbody>
               </table>
             </div>
+            </>
           )}
         </section>
         <section className="mt-5 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
           <div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2"><FileText className="h-5 w-5 text-violet-600" /><h2 className="text-lg font-semibold text-gray-900">Invoices</h2></div><span className="text-sm text-gray-500">{invoices.length}</span></div>
           {invoices.length === 0 ? <p className="mt-4 rounded-lg bg-gray-50 p-4 text-sm text-gray-600">No invoices yet.</p> : (
-            <div className="mt-4 overflow-x-auto"><table className="w-full min-w-[560px] text-left text-sm">
+            <>
+            <div className="mt-4 space-y-3 lg:hidden">
+              {invoices.map((invoice) => (
+                <article key={invoice.id} className="rounded-xl border border-gray-200 p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div><p className="font-semibold text-blue-700">{invoice.invoiceNumber}</p><p className="mt-1 text-sm text-gray-600">{invoice.invoiceDate}</p></div>
+                    <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${invoice.status === 'CANCELLED' ? 'bg-red-100 text-red-800' : invoice.paymentStatus === 'PAID' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}`}>{invoice.status === 'CANCELLED' ? 'Cancelled' : invoice.paymentStatus}</span>
+                  </div>
+                  <p className="mt-3 font-semibold text-gray-900">{currency(invoice.totalAmount, invoice.currency)}</p>
+                  <Link className="mt-2 inline-flex min-h-11 items-center font-medium text-blue-700" to={`/invoices/${invoice.id}`}>View / Print invoice</Link>
+                </article>
+              ))}
+            </div>
+            <div className="mt-4 hidden overflow-x-auto lg:block"><table className="w-full min-w-[560px] text-left text-sm">
               <thead><tr className="border-b text-xs uppercase tracking-wide text-gray-500"><th className="py-3 pr-4">Invoice #</th><th className="py-3 pr-4">Date</th><th className="py-3 pr-4">Amount</th><th className="py-3 pr-4">Payment</th><th className="py-3">Document</th></tr></thead>
               <tbody>{invoices.map((invoice) => <tr key={invoice.id} className="border-b border-gray-100"><td className="py-3 pr-4 font-medium text-blue-700">{invoice.invoiceNumber}</td><td className="py-3 pr-4 text-gray-700">{invoice.invoiceDate}</td><td className="py-3 pr-4 font-medium text-gray-900">{currency(invoice.totalAmount, invoice.currency)}</td><td className="py-3 pr-4"><span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${invoice.status === 'CANCELLED' ? 'bg-red-100 text-red-800' : invoice.paymentStatus === 'PAID' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}`}>{invoice.status === 'CANCELLED' ? 'Cancelled' : invoice.paymentStatus}</span></td><td className="py-3"><Link className="font-medium text-blue-600 hover:underline" to={`/invoices/${invoice.id}`}>View / Print</Link></td></tr>)}</tbody>
             </table></div>
+            </>
           )}
         </section>
         <section className="mt-5 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">

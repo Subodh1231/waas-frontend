@@ -238,11 +238,11 @@ const SetupPage = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4">
+    <div className="min-h-screen bg-gray-50 px-4 py-6 sm:py-12">
       <div>
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Complete Your Clinic Setup</h1>
+          <h1 className="mb-2 text-2xl font-bold text-gray-900 sm:text-3xl">Complete Your Clinic Setup</h1>
           <p className="text-gray-600">Let's get your clinic ready to accept appointments</p>
         </div>
 
@@ -282,7 +282,7 @@ const SetupPage = () => {
         </div>
 
         {/* Content Card */}
-        <div className="bg-white rounded-2xl shadow-lg p-8">
+        <div className="rounded-2xl bg-white p-4 shadow-lg sm:p-8">
           {error && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
               <p className="text-sm text-red-600">{error}</p>
@@ -330,11 +330,11 @@ const SetupPage = () => {
           )}
 
           {/* Navigation */}
-          <div className="flex justify-between mt-8 pt-6 border-t">
+          <div className="mt-8 flex flex-col gap-3 border-t pt-6 sm:flex-row sm:justify-between">
             <button
               onClick={() => currentStep > 1 && setCurrentStep(currentStep - 1)}
               disabled={currentStep === 1}
-              className={`px-6 py-2 rounded-lg font-semibold ${
+              className={`min-h-11 w-full rounded-lg px-6 py-2 font-semibold sm:w-auto ${
                 currentStep === 1
                   ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -343,17 +343,17 @@ const SetupPage = () => {
               Back
             </button>
 
-            <div className="flex gap-3">
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:gap-3">
               <button
                 onClick={handleSkipForNow}
-                className="px-6 py-2 text-gray-600 hover:text-gray-800 font-semibold"
+                className="min-h-11 w-full px-6 py-2 text-gray-600 hover:text-gray-800 font-semibold sm:w-auto"
               >
                 Skip for now
               </button>
               <button
                 onClick={handleNext}
                 disabled={isSubmitting}
-                className={`px-6 py-2 rounded-lg font-semibold text-white ${
+                className={`min-h-11 w-full rounded-lg px-6 py-2 font-semibold text-white sm:w-auto ${
                   isSubmitting
                     ? 'bg-gray-400 cursor-not-allowed'
                     : 'bg-blue-600 hover:bg-blue-700'
@@ -652,7 +652,7 @@ const WorkingHoursStep = ({
 
       <div className="space-y-3">
         {days.map((day) => (
-          <div key={day} className="flex items-center gap-4 p-3 border rounded-lg">
+          <div key={day} className="flex flex-wrap items-center gap-2 rounded-lg border p-3 sm:flex-nowrap sm:gap-4">
             <input
               type="checkbox"
               checked={data[day].isActive}
@@ -666,14 +666,14 @@ const WorkingHoursStep = ({
                   type="time"
                   value={data[day].startTime}
                   onChange={(e) => updateDay(day, 'startTime', e.target.value)}
-                  className="px-3 py-2 border rounded"
+                  className="min-h-11 min-w-[115px] rounded border px-3 py-2"
                 />
                 <span>to</span>
                 <input
                   type="time"
                   value={data[day].endTime}
                   onChange={(e) => updateDay(day, 'endTime', e.target.value)}
-                  className="px-3 py-2 border rounded"
+                  className="min-h-11 min-w-[115px] rounded border px-3 py-2"
                 />
               </>
             )}

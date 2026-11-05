@@ -392,7 +392,7 @@ const SettingsPage = () => {
   }
 
   return (
-    <div className="h-screen w-full flex flex-col bg-gray-50">
+    <div className="h-full w-full flex flex-col bg-gray-50 pb-20 lg:pb-0">
       {/* Toast */}
       {toast && (
         <div className="fixed top-4 right-4 z-50 animate-fade-in">
@@ -407,12 +407,12 @@ const SettingsPage = () => {
       )}
 
       {/* Header */}
-      <div className="px-8 pt-6 pb-4 shrink-0">
+      <div className="shrink-0 px-4 pt-4 pb-3 sm:px-8 sm:pt-6 sm:pb-4">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Settings</h1>
         <p className="text-gray-600">Manage your clinic and account settings</p>
       </div>
 
-      <div className="px-8 pb-8 flex-1 overflow-auto">
+      <div className="min-h-0 flex-1 overflow-auto px-4 pb-24 sm:px-8 sm:pb-8 lg:pb-8">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Sidebar */}
         <div className="lg:col-span-1">
