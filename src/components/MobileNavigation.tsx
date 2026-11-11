@@ -10,6 +10,7 @@ const moreItems = [
   { label: 'Team & availability', to: '/settings?section=staff' },
   { label: 'Booking page', to: '/settings?section=booking-page' },
   { label: 'Reminders', to: '/settings?section=reminders' },
+  { label: 'Document branding', to: '/settings?section=documents' },
   { label: 'Settings', to: '/settings' },
   { label: 'Help', to: '/help' },
 ];

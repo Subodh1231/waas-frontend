@@ -27,6 +27,7 @@ const HelpGettingStartedPage = lazy(() => import('./pages/HelpGettingStartedPage
 const HelpReceptionistPage = lazy(() => import('./pages/HelpReceptionistPage'));
 const HelpPatientBookingPage = lazy(() => import('./pages/HelpPatientBookingPage'));
 const HelpAppointmentsPage = lazy(() => import('./pages/HelpAppointmentsPage'));
+const HelpDocumentBrandingPage = lazy(() => import('./pages/HelpDocumentBrandingPage'));
 
 function App() {
   return (
@@ -45,6 +46,7 @@ function App() {
           <Route path="/help/receptionist" element={<HelpReceptionistPage />} />
           <Route path="/help/patient-booking" element={<HelpPatientBookingPage />} />
           <Route path="/help/appointments" element={<HelpAppointmentsPage />} />
+          <Route path="/help/invoices" element={<HelpDocumentBrandingPage />} />
 
           {/* Public patient booking page - bookzi.in/c/{slug} */}
           <Route path="/c/:slug" element={<PublicClinicPage />} />

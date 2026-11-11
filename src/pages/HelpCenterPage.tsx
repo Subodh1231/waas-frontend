@@ -5,6 +5,7 @@ import {
   BookOpen,
   CalendarCheck2,
   ClipboardCheck,
+  FileText,
   HelpCircle,
   MessageSquareText,
   Search,
@@ -37,6 +38,12 @@ const helpCards = [
     summary: 'How appointments are tracked, updated, and managed from the Bookzi dashboard.',
     route: '/help/appointments',
     icon: CalendarCheck2,
+  },
+  {
+    title: 'Invoices & Document Branding',
+    summary: 'How to upload a clinic seal or billing signature and use the same finalized PDF for print, download, and email.',
+    route: '/help/invoices',
+    icon: FileText,
   },
   {
     title: 'Doctors, Services & Schedules',

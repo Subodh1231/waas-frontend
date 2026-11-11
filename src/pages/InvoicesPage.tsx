@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, FileText, Plus, Printer, Search, X } from 'lucide-react';
 import {
@@ -7,6 +7,7 @@ import {
   getInvoice,
   getInvoiceDraft,
   getInvoiceForAppointment,
+  getInvoicePdf,
   searchInvoices,
   updateInvoicePayment,
   sendInvoiceEmail,
@@ -55,6 +56,9 @@ const InvoicesPage = () => {
   const appointmentId = searchParams.get('appointmentId');
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [invoice, setInvoice] = useState<Invoice | null>(null);
+  const [invoicePdfUrl, setInvoicePdfUrl] = useState('');
+  const [invoicePdfReady, setInvoicePdfReady] = useState(false);
+  const invoicePdfFrameRef = useRef<HTMLIFrameElement>(null);
   const [detailPaymentMethod, setDetailPaymentMethod] = useState('CASH');
   const [showEmailDialog, setShowEmailDialog] = useState(false);
   const [invoiceEmailSuggestion, setInvoiceEmailSuggestion] = useState('');
@@ -77,15 +81,21 @@ const InvoicesPage = () => {
 
   useEffect(() => {
     let cancelled = false;
+    let pdfObjectUrl = '';
     const load = async () => {
       setLoading(true);
       setError('');
+      setInvoice(null);
+      setInvoicePdfUrl('');
+      setInvoicePdfReady(false);
       try {
         if (invoiceId) {
-          const result = await getInvoice(invoiceId);
+          const [result, pdf] = await Promise.all([getInvoice(invoiceId), getInvoicePdf(invoiceId)]);
           if (!cancelled) {
             setInvoice(result);
             setDetailPaymentMethod(result.paymentMethod || 'CASH');
+            pdfObjectUrl = URL.createObjectURL(pdf);
+            setInvoicePdfUrl(pdfObjectUrl);
           }
           return;
         }
@@ -122,7 +132,10 @@ const InvoicesPage = () => {
       }
     };
     load();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      if (pdfObjectUrl) URL.revokeObjectURL(pdfObjectUrl);
+    };
   }, [invoiceId, appointmentId, navigate]);
 
   useEffect(() => {
@@ -308,7 +321,6 @@ const InvoicesPage = () => {
   if (invoiceId && invoice) {
     return (
       <div className="h-full overflow-y-auto bg-gray-100 px-4 py-6 pb-24 sm:px-8 lg:pb-8">
-        <style>{`@media print { @page { margin: 14mm; } body * { visibility: hidden !important; } .invoice-print, .invoice-print * { visibility: visible !important; } .invoice-print { position: fixed !important; top: 0 !important; left: 0 !important; width: 100% !important; max-width: none !important; margin: 0 !important; box-shadow: none !important; border: 0 !important; } .invoice-actions { display: none !important; } }`}</style>
         <div className="invoice-actions mx-auto mb-4 flex max-w-4xl flex-col items-stretch justify-between gap-3 sm:flex-row sm:items-center">
           <Link to="/invoices" className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-700"><ArrowLeft className="h-4 w-4" />Invoices</Link>
           <div className="flex flex-wrap gap-2">
@@ -320,52 +332,35 @@ const InvoicesPage = () => {
               <button onClick={() => void handlePaymentChange(invoice.paymentStatus === 'PAID' ? 'UNPAID' : 'PAID', detailPaymentMethod)} className="min-h-11 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700">Mark {invoice.paymentStatus === 'PAID' ? 'unpaid' : 'paid'}</button>
             </>}
             {invoice.status === 'ISSUED' && <button onClick={() => void handleCancel()} className="min-h-11 rounded-lg border border-red-200 bg-white px-3 py-2 text-sm font-medium text-red-700">Cancel invoice</button>}
-            <button onClick={() => window.print()} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"><Printer className="h-4 w-4" />Print / Save PDF</button>
+            <button
+              onClick={() => invoicePdfFrameRef.current?.contentWindow?.print()}
+              disabled={!invoicePdfReady}
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+            >
+              <Printer className="h-4 w-4" />Print finalized PDF
+            </button>
+            {invoicePdfUrl && <a href={invoicePdfUrl} download={`${invoice.invoiceNumber}.pdf`} className="inline-flex min-h-11 items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50">Download PDF</a>}
           </div>
         </div>
         {notice && <div className="invoice-actions mx-auto mb-4 max-w-4xl rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-800">{notice}</div>}
         {error && <div className="invoice-actions mx-auto mb-4 max-w-4xl rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</div>}
-        <article className="invoice-print mx-auto max-w-4xl rounded-xl border border-gray-200 bg-white p-6 shadow-sm sm:p-10">
-          <header className="flex flex-col justify-between gap-6 border-b border-gray-200 pb-6 sm:flex-row">
-            <div className="flex gap-4">
-              {invoice.clinicLogoUrl && <img src={invoice.clinicLogoUrl} alt="Clinic logo" className="h-16 w-16 rounded-lg object-contain" />}
-              <div><h1 className="text-xl font-bold text-gray-900">{invoice.clinicName}</h1>{invoice.clinicAddress && <p className="mt-1 whitespace-pre-line text-sm text-gray-600">{invoice.clinicAddress}</p>}{invoice.clinicPhone && <p className="mt-1 text-sm text-gray-600">Phone: {invoice.clinicPhone}</p>}</div>
-            </div>
-            <div className="sm:text-right"><p className="text-3xl font-bold tracking-wide text-blue-700">{invoice.paymentStatus === 'PAID' ? 'RECEIPT / INVOICE' : 'INVOICE'}</p><p className="mt-2 font-semibold text-gray-900">{invoice.invoiceNumber}</p><p className="mt-1 text-sm text-gray-600">Invoice date: {invoice.invoiceDate}</p><p className="mt-1 text-xs text-gray-500">Appointment ref: BK-{invoice.appointmentId.slice(0, 8).toUpperCase()}</p><p className="mt-2"><InvoiceStatus value={invoice.status === 'CANCELLED' ? 'CANCELLED' : invoice.paymentStatus} /></p></div>
-          </header>
-          <section className="grid gap-6 py-6 sm:grid-cols-2">
-            <div><p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Bill to</p><p className="mt-2 font-semibold text-gray-900">{invoice.patientName}</p>{invoice.patientPhone && <p className="mt-1 text-sm text-gray-600">{invoice.patientPhone}</p>}</div>
-            <div className="sm:text-right"><p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Consulting doctor</p><p className="mt-2 font-semibold text-gray-900">{invoice.providerName || '—'}</p><p className="mt-1 text-sm text-gray-600">Appointment date: {invoice.appointmentDate}</p></div>
-          </section>
-          <div className="space-y-3 lg:hidden">
-            {invoice.items.map((item) => (
-              <div key={item.id} className="rounded-lg border border-gray-200 p-3">
-                <p className="break-words font-medium text-gray-800">{item.description}</p>
-                <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
-                  <p className="text-gray-600">Qty: {item.quantity}</p>
-                  <p className="text-right text-gray-600">Rate: {money(item.unitPrice, invoice.currency)}</p>
-                  <p className="col-span-2 text-right font-semibold text-gray-900">Amount: {money(item.lineTotal, invoice.currency)}</p>
-                </div>
-              </div>
-            ))}
+        <section className="invoice-actions mx-auto max-w-4xl overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+          <div className="flex flex-col gap-1 border-b border-gray-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <h2 className="font-semibold text-gray-900">Finalized invoice PDF</h2>
+            <p className="text-xs text-gray-500">This issue-time PDF is unchanged by later payment updates.</p>
           </div>
-          <div className="hidden overflow-x-auto lg:block">
-            <table className="w-full min-w-[560px] border-collapse text-sm">
-              <thead><tr className="border-y border-gray-200 bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500"><th className="px-3 py-3">Description</th><th className="px-3 py-3 text-right">Qty</th><th className="px-3 py-3 text-right">Rate</th><th className="px-3 py-3 text-right">Amount</th></tr></thead>
-              <tbody>{invoice.items.map((item) => <tr key={item.id} className="border-b border-gray-100"><td className="px-3 py-4 font-medium text-gray-800">{item.description}</td><td className="px-3 py-4 text-right text-gray-600">{item.quantity}</td><td className="px-3 py-4 text-right text-gray-600">{money(item.unitPrice, invoice.currency)}</td><td className="px-3 py-4 text-right font-medium text-gray-900">{money(item.lineTotal, invoice.currency)}</td></tr>)}</tbody>
-            </table>
-          </div>
-          <section className="ml-auto mt-6 w-full max-w-sm space-y-2 text-sm">
-            <div className="flex justify-between text-gray-600"><span>Subtotal</span><span>{money(invoice.subtotal, invoice.currency)}</span></div>
-            {Number(invoice.discountAmount) > 0 && <div className="flex justify-between text-gray-600"><span>Discount</span><span>− {money(invoice.discountAmount, invoice.currency)}</span></div>}
-            {Number(invoice.taxAmount) > 0 && <div className="flex justify-between text-gray-600"><span>Tax amount</span><span>{money(invoice.taxAmount, invoice.currency)}</span></div>}
-            <div className="flex justify-between border-t border-gray-200 pt-3 text-lg font-bold text-gray-900"><span>Total</span><span>{money(invoice.totalAmount, invoice.currency)}</span></div>
-            <div className="flex justify-between pt-2 text-gray-600"><span>Payment status</span><span className="font-medium">{invoice.paymentStatus}</span></div>
-            {invoice.paymentMethod && <div className="flex justify-between text-gray-600"><span>Payment method</span><span>{invoice.paymentMethod.replace('_', ' ')}</span></div>}
-          </section>
-          {invoice.notes && <section className="mt-8 rounded-lg bg-gray-50 p-4"><p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Notes</p><p className="mt-2 whitespace-pre-line text-sm text-gray-700">{invoice.notes}</p></section>}
-          <footer className="mt-10 border-t border-gray-200 pt-5 text-center text-sm text-gray-500"><p>Thank you for choosing {invoice.clinicName}.</p>{invoice.clinicPhone && <p className="mt-1">{invoice.clinicPhone}</p>}<p className="mt-3 text-xs">Invoice/receipt for record keeping. This document does not calculate GST or claim GST tax-invoice compliance.</p></footer>
-        </article>
+          {invoicePdfUrl ? (
+            <iframe
+              ref={invoicePdfFrameRef}
+              src={invoicePdfUrl}
+              title={`Finalized invoice ${invoice.invoiceNumber}`}
+              onLoad={() => setInvoicePdfReady(true)}
+              className="h-[70vh] min-h-[32rem] w-full"
+            />
+          ) : (
+            <div className="flex h-64 items-center justify-center text-sm text-gray-500">Loading finalized PDF…</div>
+          )}
+        </section>
         {showEmailDialog && <SendOperationalEmailModal title="Email invoice" description="Confirm or edit the recipient. The invoice PDF will be attached." initialEmail={invoiceEmailSuggestion} submitting={sendingEmail} onClose={() => setShowEmailDialog(false)} onSubmit={handleSendInvoiceEmail} />}
       </div>
     );

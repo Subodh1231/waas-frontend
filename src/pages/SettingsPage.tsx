@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Settings, Building2, Clock, DollarSign, Bell, CreditCard, Globe, Users, QrCode, User } from 'lucide-react';
+import { Settings, Building2, Clock, DollarSign, Bell, CreditCard, FileText, Globe, Users, QrCode, User } from 'lucide-react';
 import { QRCodeCanvas } from 'qrcode.react';
 import { Link, useSearchParams } from 'react-router-dom';
 import api, { getApiErrorMessage, getClinicReadiness, type ClinicReadiness } from '../lib/api';
 import WhatsAppSettingsTab from '../components/WhatsAppSettingsTab';
 import StaffManagementTab from '../components/StaffManagementTab';
 import BookingPosterTools from '../components/BookingPosterTools';
+import DocumentBrandingSettings from '../components/DocumentBrandingSettings';
 
 interface TenantConfig {
   business_name?: string;
@@ -175,7 +176,7 @@ const SettingsPage = () => {
 
   useEffect(() => {
     const section = searchParams.get('section');
-    const supportedSections = ['profile', 'account', 'booking-page', 'language', 'staff', 'whatsapp', 'reminders', 'payment'];
+    const supportedSections = ['profile', 'account', 'booking-page', 'language', 'staff', 'whatsapp', 'reminders', 'payment', 'documents'];
     if (section && supportedSections.includes(section)) {
       setActiveSection(section);
     }
@@ -513,6 +514,19 @@ const SettingsPage = () => {
               >
                 <CreditCard className="w-5 h-5" />
                 <span>Payment</span>
+              </button>
+
+              <button
+                onClick={() => setActiveSection('documents')}
+                aria-current={activeSection === 'documents' ? 'page' : undefined}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
+                  activeSection === 'documents'
+                    ? 'bg-blue-50 text-blue-700 font-medium'
+                    : 'text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                <FileText className="w-5 h-5" />
+                <span>Document Branding</span>
               </button>
             </nav>
           </div>
@@ -976,6 +990,8 @@ const SettingsPage = () => {
               </form>
             </div>
           )}
+
+          {activeSection === 'documents' && <DocumentBrandingSettings />}
         </div>
         </div>
       </div>

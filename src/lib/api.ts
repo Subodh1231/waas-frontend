@@ -119,6 +119,11 @@ const api: AxiosInstance = axios.create({
  */
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
+    // Let the browser set the multipart boundary for FormData requests.
+    if (typeof FormData !== 'undefined' && config.data instanceof FormData) {
+      config.headers.delete('Content-Type');
+    }
+
     // Attach Authorization token if available
     const token = getToken();
     if (token) {
@@ -483,6 +488,69 @@ export interface InvoiceDraft {
   servicePrice: string | number;
   appointmentCompleted: boolean;
 }
+
+export type DocumentAssetType = 'CLINIC_SEAL' | 'BILLING_SIGNATURE';
+
+export interface DocumentAsset {
+  id: string;
+  assetType: DocumentAssetType;
+  originalFilename: string;
+  contentType: 'image/png' | 'image/jpeg';
+  fileSize: number;
+  width: number;
+  height: number;
+  checksumSha256: string;
+  updatedAt: string;
+}
+
+export interface DocumentBranding {
+  includeSealOnInvoice: boolean;
+  includeSignatureOnInvoice: boolean;
+  clinicSeal: DocumentAsset | null;
+  billingSignature: DocumentAsset | null;
+}
+
+export const getDocumentBranding = async (): Promise<DocumentBranding> => {
+  const response = await api.get('/api/settings/document-branding');
+  return response.data;
+};
+
+export const updateDocumentBranding = async (
+  includeSealOnInvoice: boolean,
+  includeSignatureOnInvoice: boolean
+): Promise<DocumentBranding> => {
+  const response = await api.put('/api/settings/document-branding', {
+    includeSealOnInvoice,
+    includeSignatureOnInvoice,
+  });
+  return response.data;
+};
+
+export const uploadDocumentAsset = async (
+  assetType: DocumentAssetType,
+  file: File
+): Promise<DocumentAsset> => {
+  const formData = new FormData();
+  formData.append('file', file);
+  const response = await api.put(`/api/settings/document-branding/assets/${assetType}`, formData);
+  return response.data;
+};
+
+export const getDocumentAssetPreview = async (assetType: DocumentAssetType): Promise<Blob> => {
+  const response = await api.get(`/api/settings/document-branding/assets/${assetType}`, {
+    responseType: 'blob',
+  });
+  return response.data;
+};
+
+export const removeDocumentAsset = async (assetType: DocumentAssetType): Promise<void> => {
+  await api.delete(`/api/settings/document-branding/assets/${assetType}`);
+};
+
+export const getInvoicePdf = async (invoiceId: string): Promise<Blob> => {
+  const response = await api.get(`/api/invoices/${invoiceId}/pdf`, { responseType: 'blob' });
+  return response.data;
+};
 
 export interface InvoiceItemInput {
   serviceId?: string | null;
