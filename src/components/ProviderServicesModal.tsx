@@ -26,9 +26,11 @@ export default function ProviderServicesModal({
   const [newService, setNewService] = useState({
     name: '',
     description: '',
-    duration: 30,
+    duration: '30',
     price: '',
   });
+  const durationMinutes = Number(newService.duration);
+  const hasValidDuration = Number.isInteger(durationMinutes) && durationMinutes >= 5;
 
   useEffect(() => {
     if (isOpen) {
@@ -61,6 +63,11 @@ export default function ProviderServicesModal({
       return;
     }
 
+    if (!hasValidDuration) {
+      setError('Duration must be a whole number of at least 5 minutes');
+      return;
+    }
+
     try {
       setSaving(true);
       setError('');
@@ -68,13 +75,13 @@ export default function ProviderServicesModal({
       await api.post('/api/services', {
         name: newService.name,
         description: newService.description,
-        durationMinutes: newService.duration,
+        durationMinutes,
         price: parseFloat(newService.price),
         providerId, // Assign to this provider
       });
 
       // Reset form
-      setNewService({ name: '', description: '', duration: 30, price: '' });
+      setNewService({ name: '', description: '', duration: '30', price: '' });
       setShowAddService(false);
       
       // Reload services
@@ -314,18 +321,24 @@ export default function ProviderServicesModal({
                           Duration (minutes) *
                         </label>
                         <input
-                          type="number"
+                          type="text"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
                           value={newService.duration}
                           onChange={(e) =>
                             setNewService({
                               ...newService,
-                              duration: parseInt(e.target.value) || 30,
+                              duration: e.target.value,
                             })
                           }
                           className="w-full border rounded-lg px-3 py-2"
-                          min="5"
-                          step="5"
+                          placeholder="30"
+                          required
+                          aria-invalid={!hasValidDuration}
                         />
+                        {!hasValidDuration && (
+                          <p className="mt-1 text-xs text-red-600">Enter a whole number of at least 5 minutes.</p>
+                        )}
                       </div>
 
                       <div>
@@ -349,7 +362,7 @@ export default function ProviderServicesModal({
                     <div className="flex flex-col gap-2 pt-2 sm:flex-row sm:items-center">
                       <button
                         onClick={handleCreateService}
-                        disabled={saving || !newService.name || !newService.price}
+                        disabled={saving || !newService.name || !newService.price || !hasValidDuration}
                         className="min-h-11 w-full rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50 sm:w-auto"
                       >
                         {saving ? 'Creating...' : 'Create Service'}
@@ -357,7 +370,7 @@ export default function ProviderServicesModal({
                       <button
                         onClick={() => {
                           setShowAddService(false);
-                          setNewService({ name: '', description: '', duration: 30, price: '' });
+                          setNewService({ name: '', description: '', duration: '30', price: '' });
                         }}
                         className="min-h-11 w-full px-4 py-2 text-gray-700 hover:text-gray-900 sm:w-auto"
                       >

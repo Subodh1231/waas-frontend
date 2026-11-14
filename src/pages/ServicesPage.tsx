@@ -153,12 +153,18 @@ const ServicesPage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    const durationMinutes = Number(formData.durationMinutes);
+    if (!Number.isInteger(durationMinutes) || durationMinutes < 5) {
+      showToast('Duration must be a whole number of at least 5 minutes', 'error');
+      return;
+    }
+
     const payload = {
       name: formData.name,
       price: formData.price.trim() ? parseFloat(formData.price) : 0,
       description: formData.description,
       consultationType: formData.consultationType || formData.name,
-      durationMinutes: parseInt(formData.durationMinutes),
+      durationMinutes,
       color: formData.color,
       category: formData.category,
       bufferMinutes: parseInt(formData.bufferMinutes),
@@ -551,13 +557,14 @@ const ServicesPage = () => {
                     Duration (minutes) *
                   </label>
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     value={formData.durationMinutes}
                     onChange={(e) => setFormData({ ...formData, durationMinutes: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                     required
-                    min="5"
-                    step="5"
+                    placeholder="30"
                   />
                 </div>
 
