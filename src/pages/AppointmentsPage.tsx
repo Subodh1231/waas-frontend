@@ -5,6 +5,7 @@ import { CalendarDays, ChevronLeft, ChevronRight, Plus, Star } from 'lucide-reac
 import api from '../lib/api';
 import { getAppointmentFeedback, type AppointmentFeedbackView } from '../lib/api';
 import AddAppointmentModal from '../components/AddAppointmentModal';
+import { hasClinicRole } from '../lib/auth';
 
 interface Booking {
   id: string;
@@ -31,6 +32,7 @@ type CalendarMode = 'week' | 'month';
 type StatusFilter = 'ALL' | 'PENDING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED';
 
 const AppointmentsPage = () => {
+  const canManageAppointments = hasClinicRole('ADMIN') || hasClinicRole('RECEPTIONIST');
   const [searchParams, setSearchParams] = useSearchParams();
   const [appointmentPatientId, setAppointmentPatientId] = useState<string | undefined>();
   const [viewMode, setViewMode] = useState<ViewMode>('calendar');
@@ -60,6 +62,14 @@ const AppointmentsPage = () => {
   useEffect(() => {
     const patientId = searchParams.get('patientId');
     const shouldCreateAppointment = searchParams.get('new') === '1';
+    if (!canManageAppointments && (patientId || shouldCreateAppointment)) {
+      setSearchParams((current) => {
+        current.delete('patientId');
+        current.delete('new');
+        return current;
+      }, { replace: true });
+      return;
+    }
     if (!patientId && !shouldCreateAppointment) return;
     if (patientId) setAppointmentPatientId(patientId);
     setShowAddModal(true);
@@ -68,7 +78,7 @@ const AppointmentsPage = () => {
       current.delete('new');
       return current;
     }, { replace: true });
-  }, [searchParams, setSearchParams]);
+  }, [canManageAppointments, searchParams, setSearchParams]);
 
   // Fetch bookings data
   const fetchBookings = async () => {
@@ -765,7 +775,7 @@ const AppointmentsPage = () => {
           <h1 className="mb-1 text-2xl font-bold text-gray-800 lg:mb-2 lg:text-3xl">Appointments</h1>
           <p className="hidden text-gray-600 lg:block">Manage and view your clinic appointments</p>
         </div>
-        <button
+        {canManageAppointments && <button
           onClick={() => {
             setAppointmentPatientId(undefined);
             setShowAddModal(true);
@@ -774,7 +784,7 @@ const AppointmentsPage = () => {
         >
           <Plus className="w-5 h-5" />
           New Appointment
-        </button>
+        </button>}
       </div>
 
       <div className="hidden shrink-0 px-4 sm:px-8 lg:block">
@@ -902,6 +912,7 @@ const AppointmentsPage = () => {
           onClose={() => setSelectedBooking(null)}
           onUpdateStatus={updateBookingStatus}
           onCancel={handleCancelClick}
+          readOnly={!canManageAppointments}
         />
       )}
 
@@ -1064,12 +1075,14 @@ const BookingDetailModal = ({
   booking,
   onClose,
   onUpdateStatus,
-  onCancel
+  onCancel,
+  readOnly
 }: {
   booking: Booking;
   onClose: () => void;
   onUpdateStatus: (id: string, status: string) => void;
   onCancel: (id: string) => void;
+  readOnly: boolean;
 }) => {
   const navigate = useNavigate();
   const isCompleted = booking.status === 'COMPLETED' || booking.appointmentStatus === 'COMPLETED';
@@ -1084,7 +1097,7 @@ const BookingDetailModal = ({
   useEffect(() => {
     let active = true;
     setExistingInvoiceId(null);
-    if (!isCompleted) return () => { active = false; };
+    if (!isCompleted || readOnly) return () => { active = false; };
     api.get(`/api/invoices/appointments/${booking.id}`)
       .then((response) => {
         if (active) setExistingInvoiceId(response.data.id);
@@ -1098,11 +1111,11 @@ const BookingDetailModal = ({
         }
       });
     return () => { active = false; };
-  }, [booking.id, isCompleted]);
+  }, [booking.id, isCompleted, readOnly]);
 
   useEffect(() => {
     let active = true;
-    if (!isCompleted) {
+    if (!isCompleted || readOnly) {
       setFeedback(null);
       return () => { active = false; };
     }
@@ -1112,7 +1125,7 @@ const BookingDetailModal = ({
       .catch(() => { if (active) setFeedback({ status: 'NOT_REQUESTED' }); })
       .finally(() => { if (active) setFeedbackLoading(false); });
     return () => { active = false; };
-  }, [booking.id, isCompleted]);
+  }, [booking.id, isCompleted, readOnly]);
 
   const handleUpdatePayment = async () => {
     try {
@@ -1185,7 +1198,7 @@ const BookingDetailModal = ({
             <p className="text-lg font-semibold text-gray-800">{booking.serviceName}</p>
           </div>
 
-          {isCompleted && (
+          {isCompleted && !readOnly && (
             <section className="border-t pt-4" aria-label="Appointment feedback">
               <h3 className="text-sm font-semibold text-gray-800">Feedback</h3>
               {feedbackLoading ? <p className="mt-2 text-sm text-gray-500">Loading feedback…</p> : feedback?.status === 'SUBMITTED' ? (
@@ -1220,7 +1233,7 @@ const BookingDetailModal = ({
           )}
 
           {/* Notes */}
-          {booking.structuredData?.notes && (
+          {!readOnly && booking.structuredData?.notes && (
             <div>
               <p className="text-sm text-gray-600 mb-1">Notes</p>
               <p className="text-gray-800">{booking.structuredData.notes}</p>
@@ -1228,6 +1241,7 @@ const BookingDetailModal = ({
           )}
 
           {/* Payment Status */}
+          {!readOnly && (
           <div className="border-t pt-4">
             <div className="flex justify-between items-center mb-3">
               <p className="text-sm font-semibold text-gray-700">Payment Information</p>
@@ -1312,9 +1326,10 @@ const BookingDetailModal = ({
               </div>
             )}
           </div>
+          )}
 
           {/* Cancellation Reason */}
-          {booking.cancellationReason && (
+          {!readOnly && booking.cancellationReason && (
             <div>
               <p className="text-sm text-gray-600 mb-1">Cancellation Reason</p>
               <p className="text-gray-800 bg-red-50 p-3 rounded border border-red-200">
@@ -1332,7 +1347,7 @@ const BookingDetailModal = ({
 
         {/* Modal Actions */}
         <div className="sticky bottom-0 flex shrink-0 flex-col gap-2 border-t bg-gray-50 px-4 py-3 sm:flex-row sm:justify-end sm:px-6 sm:py-4">
-          {isCompleted && (
+          {isCompleted && !readOnly && (
             <button
               onClick={() => navigate(existingInvoiceId
                 ? `/invoices/${existingInvoiceId}`
@@ -1342,7 +1357,7 @@ const BookingDetailModal = ({
               {existingInvoiceId ? 'View Invoice' : 'Generate Invoice'}
             </button>
           )}
-          {booking.status === 'PENDING' && (
+          {!readOnly && booking.status === 'PENDING' && (
             <button
               onClick={() => onUpdateStatus(booking.id, 'CONFIRMED')}
               className="min-h-11 rounded bg-green-600 px-4 py-2 font-medium text-white hover:bg-green-700"
@@ -1350,7 +1365,7 @@ const BookingDetailModal = ({
               ✓ Confirm
             </button>
           )}
-          {booking.status === 'CONFIRMED' && (
+          {!readOnly && booking.status === 'CONFIRMED' && (
             <button
               onClick={() => onUpdateStatus(booking.id, 'COMPLETED')}
               className="min-h-11 rounded bg-gray-600 px-4 py-2 font-medium text-white hover:bg-gray-700"
@@ -1358,7 +1373,7 @@ const BookingDetailModal = ({
               ✓ Mark Complete
             </button>
           )}
-          {(booking.status === 'PENDING' || booking.status === 'CONFIRMED') && (
+          {!readOnly && (booking.status === 'PENDING' || booking.status === 'CONFIRMED') && (
             <button
               onClick={() => onCancel(booking.id)}
               className="min-h-11 rounded bg-red-600 px-4 py-2 font-medium text-white hover:bg-red-700"

@@ -32,10 +32,12 @@ const LoginPage = () => {
     
     try {
       // Call login function from auth.ts
-      await login(email, password);
+      const session = await login(email, password);
       
       // Success - navigate to dashboard
-      navigate('/dashboard');
+      const roles = session.memberships?.find((membership) => membership.tenantId === session.tenantId)?.roles || [];
+      const doctorOnly = roles.includes('DOCTOR') && !roles.includes('ADMIN') && !roles.includes('RECEPTIONIST');
+      navigate(doctorOnly ? '/appointments' : '/dashboard');
     } catch (err: any) {
       // Failure - show error
       const errorMessage = err.response?.data?.message || err.message || 'Login failed. Please try again.';

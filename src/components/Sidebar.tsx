@@ -1,18 +1,22 @@
 import { useLocation } from 'react-router-dom';
 import SidebarItem from './SidebarItem';
-import { logout } from '../lib/auth';
+import { hasClinicRole, logout } from '../lib/auth';
+import ClinicSwitcher from './ClinicSwitcher';
 
 const Sidebar = () => {
   const location = useLocation();
 
+  const admin = hasClinicRole('ADMIN');
+  const receptionist = hasClinicRole('RECEPTIONIST');
+  const doctor = hasClinicRole('DOCTOR');
   const menuItems = [
-    { path: '/dashboard', label: 'Dashboard' },
+    ...(!doctor || admin || receptionist ? [{ path: '/dashboard', label: 'Dashboard' }] : []),
     { path: '/appointments', label: 'Appointments' },
-    { path: '/invoices', label: 'Invoices' },
-    { path: '/patients', label: 'Patients' },
-    { path: '/services', label: 'Services' },
-    { path: '/feedback', label: 'Feedback' },
-    { path: '/settings', label: 'Settings' },
+    ...(admin || receptionist ? [{ path: '/invoices', label: 'Invoices' }] : []),
+    ...(admin || receptionist ? [{ path: '/patients', label: 'Patients' }] : []),
+    ...(admin ? [{ path: '/services', label: 'Services' }] : []),
+    ...(admin ? [{ path: '/feedback', label: 'Feedback' }] : []),
+    ...(admin ? [{ path: '/settings', label: 'Settings' }] : []),
     { path: '/help', label: 'Help' },
   ];
 
@@ -23,8 +27,9 @@ const Sidebar = () => {
   return (
     <aside className="hidden w-60 shrink-0 bg-white border-r border-gray-200 lg:flex lg:flex-col">
       {/* Logo/Brand */}
-      <div className="h-16 flex items-center px-6 border-b border-gray-200">
+      <div className="min-h-16 flex items-center gap-3 px-4 border-b border-gray-200">
         <h1 className="text-xl font-bold text-blue-600">Bookzi</h1>
+        <ClinicSwitcher />
       </div>
 
       {/* Navigation Menu */}

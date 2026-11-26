@@ -1,32 +1,40 @@
 import { useState } from 'react';
 import { CalendarDays, Home, Menu, Plus, Users, X } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { logout } from '../lib/auth';
-
-const moreItems = [
-  { label: 'Invoices', to: '/invoices' },
-  { label: 'Feedback', to: '/feedback' },
-  { label: 'Services', to: '/services' },
-  { label: 'Team & availability', to: '/settings?section=staff' },
-  { label: 'Booking page', to: '/settings?section=booking-page' },
-  { label: 'Reminders', to: '/settings?section=reminders' },
-  { label: 'Document branding', to: '/settings?section=documents' },
-  { label: 'Settings', to: '/settings' },
-  { label: 'Help', to: '/help' },
-];
+import { getClinicRoles, logout } from '../lib/auth';
+import ClinicSwitcher from './ClinicSwitcher';
 
 const MobileNavigation = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [moreOpen, setMoreOpen] = useState(false);
+  const roles = getClinicRoles();
+  const admin = roles.includes('ADMIN');
+  const receptionist = roles.includes('RECEPTIONIST');
+  const doctor = roles.includes('DOCTOR');
+  const moreItems = [
+    ...(admin || receptionist ? [{ label: 'Invoices', to: '/invoices' }] : []),
+    ...(admin ? [{ label: 'Feedback', to: '/feedback' }] : []),
+    ...(admin ? [{ label: 'Services', to: '/services' }] : []),
+    ...(admin ? [
+      { label: 'Team & access', to: '/settings?section=team' },
+      { label: 'Providers & availability', to: '/settings?section=staff' },
+      { label: 'Booking page', to: '/settings?section=booking-page' },
+      { label: 'Reminders', to: '/settings?section=reminders' },
+      { label: 'Document branding', to: '/settings?section=documents' },
+      { label: 'Settings', to: '/settings' },
+    ] : []),
+    { label: 'Help', to: '/help' },
+  ];
 
   const isMoreActive = ['/invoices', '/feedback', '/services', '/settings', '/help']
     .some((path) => location.pathname.startsWith(path));
 
   return (
     <>
-      <header className="flex h-14 shrink-0 items-center border-b border-gray-200 bg-white px-4 lg:hidden">
+      <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-gray-200 bg-white px-4 lg:hidden">
         <Link to="/dashboard" className="text-lg font-bold text-blue-600">Bookzi</Link>
+        <ClinicSwitcher />
       </header>
 
       {moreOpen && (
@@ -62,12 +70,12 @@ const MobileNavigation = () => {
         className="fixed inset-x-0 bottom-0 z-30 grid h-[calc(4rem+env(safe-area-inset-bottom))] grid-cols-5 border-t border-gray-200 bg-white pb-[env(safe-area-inset-bottom)] lg:hidden"
       >
         <Link
-          to="/dashboard"
-          aria-current={location.pathname === '/dashboard' ? 'page' : undefined}
-          className={`flex min-w-0 flex-col items-center justify-center gap-1 text-xs font-medium ${location.pathname === '/dashboard' ? 'text-blue-700' : 'text-gray-600'}`}
+          to={doctor && !admin && !receptionist ? '/appointments' : '/dashboard'}
+          aria-current={location.pathname === '/dashboard' || (doctor && !admin && !receptionist && location.pathname === '/appointments') ? 'page' : undefined}
+          className={`flex min-w-0 flex-col items-center justify-center gap-1 text-xs font-medium ${location.pathname === '/dashboard' || (doctor && !admin && !receptionist && location.pathname === '/appointments') ? 'text-blue-700' : 'text-gray-600'}`}
         >
           <Home className="h-5 w-5" aria-hidden="true" />
-          Home
+          {doctor && !admin && !receptionist ? 'Schedule' : 'Home'}
         </Link>
         <Link
           to="/appointments"
@@ -81,22 +89,22 @@ const MobileNavigation = () => {
           type="button"
           onClick={() => {
             setMoreOpen(false);
-            navigate('/appointments?new=1');
+            navigate(doctor && !admin && !receptionist ? '/appointments' : '/appointments?new=1');
           }}
           className="flex min-w-0 flex-col items-center justify-center gap-1 text-xs font-semibold text-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500"
         >
           <span className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-600 text-white">
-            <Plus className="h-5 w-5" aria-hidden="true" />
+            {doctor && !admin && !receptionist ? <CalendarDays className="h-5 w-5" aria-hidden="true" /> : <Plus className="h-5 w-5" aria-hidden="true" />}
           </span>
-          New
+          {doctor && !admin && !receptionist ? 'Schedule' : 'New'}
         </button>
         <Link
-          to="/patients"
+          to={admin || receptionist ? '/patients' : '/appointments'}
           aria-current={location.pathname.startsWith('/patients') ? 'page' : undefined}
           className={`flex min-w-0 flex-col items-center justify-center gap-1 text-xs font-medium ${location.pathname.startsWith('/patients') ? 'text-blue-700' : 'text-gray-600'}`}
         >
-          <Users className="h-5 w-5" aria-hidden="true" />
-          Patients
+          {admin || receptionist ? <Users className="h-5 w-5" aria-hidden="true" /> : <CalendarDays className="h-5 w-5" aria-hidden="true" />}
+          {admin || receptionist ? 'Patients' : 'Appts'}
         </Link>
         <button
           type="button"

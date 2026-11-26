@@ -7,6 +7,8 @@ import WhatsAppSettingsTab from '../components/WhatsAppSettingsTab';
 import StaffManagementTab from '../components/StaffManagementTab';
 import BookingPosterTools from '../components/BookingPosterTools';
 import DocumentBrandingSettings from '../components/DocumentBrandingSettings';
+import TeamAccessTab from '../components/TeamAccessTab';
+import { getClinicRoles } from '../lib/auth';
 
 interface TenantConfig {
   business_name?: string;
@@ -176,7 +178,7 @@ const SettingsPage = () => {
 
   useEffect(() => {
     const section = searchParams.get('section');
-    const supportedSections = ['profile', 'account', 'booking-page', 'language', 'staff', 'whatsapp', 'reminders', 'payment', 'documents'];
+    const supportedSections = ['profile', 'account', 'booking-page', 'language', 'staff', 'team', 'whatsapp', 'reminders', 'payment', 'documents'];
     if (section && supportedSections.includes(section)) {
       setActiveSection(section);
     }
@@ -469,6 +471,19 @@ const SettingsPage = () => {
               </button>
               
               <button
+                onClick={() => setActiveSection('team')}
+                aria-current={activeSection === 'team' ? 'page' : undefined}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
+                  activeSection === 'team'
+                    ? 'bg-blue-50 text-blue-700 font-medium'
+                    : 'text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                <Users className="w-5 h-5" />
+                <span>Team &amp; Access</span>
+              </button>
+
+              <button
                 onClick={() => setActiveSection('staff')}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
                   activeSection === 'staff'
@@ -477,7 +492,7 @@ const SettingsPage = () => {
                 }`}
               >
                 <Users className="w-5 h-5" />
-                <span>Team & Staff</span>
+                <span>Providers &amp; Availability</span>
               </button>
               
               <button
@@ -700,7 +715,7 @@ const SettingsPage = () => {
                     <div className="rounded-lg border border-gray-200 p-4">
                       <p className="text-sm font-medium text-gray-500">Account role</p>
                       <p className="mt-2 font-semibold text-gray-900">
-                        {accountInfo.role === 'OWNER' ? 'Clinic owner' : accountInfo.role.toLowerCase().replace(/_/g, ' ')}
+                        {getClinicRoles().join(' + ') || (accountInfo.role === 'OWNER' ? 'Admin' : accountInfo.role.toLowerCase().replace(/_/g, ' '))}
                       </p>
                     </div>
                   </div>
@@ -887,6 +902,7 @@ const SettingsPage = () => {
 
           {/* Staff Management Section */}
           {activeSection === 'staff' && <StaffManagementTab />}
+          {activeSection === 'team' && <TeamAccessTab />}
 
           {/* WhatsApp Section */}
           {activeSection === 'whatsapp' && (

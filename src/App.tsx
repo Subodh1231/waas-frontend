@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import ProtectedRoute from './routes/ProtectedRoute';
 import DashboardLayout from './layouts/DashboardLayout';
 import LoadingSpinner from './components/LoadingSpinner';
+import ClinicRoleRoute from './routes/ClinicRoleRoute';
 
 // Lazy load pages for code splitting
 const LandingPage = lazy(() => import('./pages/LandingPage'));
@@ -28,6 +29,7 @@ const HelpReceptionistPage = lazy(() => import('./pages/HelpReceptionistPage'));
 const HelpPatientBookingPage = lazy(() => import('./pages/HelpPatientBookingPage'));
 const HelpAppointmentsPage = lazy(() => import('./pages/HelpAppointmentsPage'));
 const HelpDocumentBrandingPage = lazy(() => import('./pages/HelpDocumentBrandingPage'));
+const AcceptInvitationPage = lazy(() => import('./pages/AcceptInvitationPage'));
 
 function App() {
   return (
@@ -39,6 +41,7 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/onboarding" element={<OnboardingPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/accept-invitation" element={<AcceptInvitationPage />} />
           <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/help" element={<HelpCenterPage />} />
@@ -62,15 +65,15 @@ function App() {
           <Route element={<ProtectedRoute />}>
             <Route path="/chats" element={<Navigate to="/dashboard" replace />} />
             <Route element={<DashboardLayout />}>
-              <Route path="/dashboard" element={<DashboardPage />} />
-              <Route path="/patients" element={<PatientsPage />} />
-              <Route path="/patients/:patientId" element={<PatientDetailPage />} />
-              <Route path="/services" element={<ServicesPage />} />
+              <Route path="/dashboard" element={<ClinicRoleRoute roles={['ADMIN', 'RECEPTIONIST']}><DashboardPage /></ClinicRoleRoute>} />
+              <Route path="/patients" element={<ClinicRoleRoute roles={['ADMIN', 'RECEPTIONIST']}><PatientsPage /></ClinicRoleRoute>} />
+              <Route path="/patients/:patientId" element={<ClinicRoleRoute roles={['ADMIN', 'RECEPTIONIST']}><PatientDetailPage /></ClinicRoleRoute>} />
+              <Route path="/services" element={<ClinicRoleRoute roles={['ADMIN']}><ServicesPage /></ClinicRoleRoute>} />
               <Route path="/appointments" element={<AppointmentsPage />} />
-              <Route path="/invoices" element={<InvoicesPage />} />
-              <Route path="/invoices/:invoiceId" element={<InvoicesPage />} />
-              <Route path="/feedback" element={<FeedbackPage />} />
-              <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/invoices" element={<ClinicRoleRoute roles={['ADMIN', 'RECEPTIONIST']}><InvoicesPage /></ClinicRoleRoute>} />
+              <Route path="/invoices/:invoiceId" element={<ClinicRoleRoute roles={['ADMIN', 'RECEPTIONIST']}><InvoicesPage /></ClinicRoleRoute>} />
+              <Route path="/feedback" element={<ClinicRoleRoute roles={['ADMIN']}><FeedbackPage /></ClinicRoleRoute>} />
+              <Route path="/settings" element={<ClinicRoleRoute roles={['ADMIN']}><SettingsPage /></ClinicRoleRoute>} />
             </Route>
           </Route>
 

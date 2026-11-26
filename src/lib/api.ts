@@ -152,7 +152,8 @@ api.interceptors.response.use(
   },
   (error) => {
     // If 401 Unauthorized, clear token and redirect to login
-    if (error.response && error.response.status === 401) {
+    const invitationAcceptance = error.config?.url?.includes('/api/team/invitations/accept');
+    if (error.response && error.response.status === 401 && !invitationAcceptance) {
       console.warn('Unauthorized - clearing token and redirecting to login');
       clearToken();
       
@@ -180,6 +181,7 @@ export const setToken = (token: string): void => {
 export const clearToken = (): void => {
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(TENANT_KEY);
+  localStorage.removeItem('waas_clinic_roles');
 };
 
 /**

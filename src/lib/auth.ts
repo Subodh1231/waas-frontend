@@ -4,6 +4,13 @@ import api from './api';
 const TOKEN_KEY = 'waas_token';
 const TENANT_KEY = 'waas_tenant';
 const ONBOARDING_STATUS_KEY = 'waas_onboarding_status';
+const CLINIC_ROLES_KEY = 'waas_clinic_roles';
+
+export interface ClinicMembershipSummary {
+  tenantId: string;
+  clinicName: string;
+  roles: string[];
+}
 
 /**
  * Type definitions
@@ -18,6 +25,9 @@ export interface LoginResponse {
   tenantId: string;
   role: string;
   onboardingStatus?: string;
+  userId?: string;
+  email?: string;
+  memberships?: ClinicMembershipSummary[];
 }
 
 export interface UserPayload {
@@ -41,17 +51,39 @@ export const login = async (email: string, password: string): Promise<LoginRespo
   // No X-Tenant-ID header needed - backend resolves tenant from email
   const response = await api.post<LoginResponse>('/api/auth/login', requestData);
   
-  const { token, tenantId, onboardingStatus } = response.data;
-  
-  // Save token, tenant ID, and onboarding status to localStorage
-  localStorage.setItem(TOKEN_KEY, token);
-  localStorage.setItem(TENANT_KEY, tenantId);
-  if (onboardingStatus) {
-    localStorage.setItem(ONBOARDING_STATUS_KEY, onboardingStatus);
-  }
+  persistLoginResponse(response.data);
   
   return response.data;
 };
+
+export const persistLoginResponse = (response: LoginResponse): void => {
+  localStorage.setItem(TOKEN_KEY, response.token);
+  localStorage.setItem(TENANT_KEY, response.tenantId);
+  const selectedMembership = response.memberships?.find((membership) => membership.tenantId === response.tenantId);
+  if (selectedMembership) {
+    localStorage.setItem(CLINIC_ROLES_KEY, JSON.stringify(selectedMembership.roles));
+  } else {
+    localStorage.removeItem(CLINIC_ROLES_KEY);
+  }
+  if (response.onboardingStatus) {
+    localStorage.setItem(ONBOARDING_STATUS_KEY, response.onboardingStatus);
+  }
+};
+
+export const getClinicRoles = (): string[] => {
+  try {
+    const stored = localStorage.getItem(CLINIC_ROLES_KEY);
+    if (stored) return JSON.parse(stored) as string[];
+  } catch (error) {
+    console.error('Failed to read clinic roles:', error);
+  }
+  const legacyRole = getUserInfo()?.role;
+  if (legacyRole === 'OWNER') return ['ADMIN'];
+  if (legacyRole === 'STAFF') return ['RECEPTIONIST'];
+  return [];
+};
+
+export const hasClinicRole = (role: string): boolean => getClinicRoles().includes(role);
 
 /**
  * Logout user - clear localStorage and redirect to login
@@ -61,6 +93,7 @@ export const logout = (): void => {
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(TENANT_KEY);
   localStorage.removeItem(ONBOARDING_STATUS_KEY);
+  localStorage.removeItem(CLINIC_ROLES_KEY);
   
   // Use pushState to redirect to login (works with SPA routing)
   window.location.href = '/';
