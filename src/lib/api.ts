@@ -699,12 +699,16 @@ export const cancelAppointment = async (id: string): Promise<void> => {
 export const checkAvailability = async (
   providerName: string,
   startTime: string,
-  durationMinutes: number
+  durationMinutes: number,
+  providerId?: string,
+  serviceId?: string
 ): Promise<AvailabilityCheckResponse> => {
   const response = await api.post('/api/appointments/check-availability', {
     providerName,
     startTime,
     durationMinutes,
+    providerId,
+    serviceId,
   });
   return response.data;
 };

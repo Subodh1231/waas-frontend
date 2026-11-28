@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { getApiErrorMessage, getClinicReadiness, type ClinicReadiness } from '../lib/api';
 import api from '../lib/api';
+import { hasClinicRole } from '../lib/auth';
 
 interface DashboardBooking {
   id: string;
@@ -15,6 +16,8 @@ interface DashboardBooking {
 }
 
 const DashboardPage = () => {
+  const isAdmin = hasClinicRole('ADMIN');
+  const canCreateAppointments = isAdmin || hasClinicRole('RECEPTIONIST') || hasClinicRole('DOCTOR');
   const [readiness, setReadiness] = useState<ClinicReadiness | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -24,6 +27,7 @@ const DashboardPage = () => {
   const [todayBookingsError, setTodayBookingsError] = useState('');
 
   const loadReadiness = useCallback(async () => {
+    if (!isAdmin) return;
     setLoading(true);
     setError('');
     try {
@@ -33,11 +37,15 @@ const DashboardPage = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [isAdmin]);
 
   useEffect(() => {
-    void loadReadiness();
-  }, [loadReadiness]);
+    if (isAdmin) {
+      void loadReadiness();
+    } else {
+      setLoading(false);
+    }
+  }, [isAdmin, loadReadiness]);
 
   useEffect(() => {
     const today = format(new Date(), 'yyyy-MM-dd');
@@ -74,7 +82,7 @@ const DashboardPage = () => {
     ? `${window.location.origin}/c/${readiness.slug}`
     : '';
 
-  if (loading) {
+  if (isAdmin && loading) {
     return (
       <div className="flex min-h-64 items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-blue-600" aria-label="Loading clinic setup" />
@@ -82,7 +90,7 @@ const DashboardPage = () => {
     );
   }
 
-  if (error || !readiness) {
+  if (isAdmin && (error || !readiness)) {
     return (
       <main className="h-full overflow-y-auto bg-gray-50 px-4 py-6 pb-24 sm:px-8 sm:py-8 lg:pb-8">
         <h1 className="mb-4 text-3xl font-bold text-gray-900">Dashboard</h1>
@@ -106,18 +114,20 @@ const DashboardPage = () => {
     { key: 'serviceConfigured', label: 'Add a service', detail: 'Choose what patients can book.', href: '/services' },
     { key: 'availabilityConfigured', label: 'Set availability', detail: 'Choose when patients can book appointments.', href: '/settings?section=staff' },
   ] as const;
-  const progress = readiness.completedSteps;
+  const progress = readiness?.completedSteps ?? 0;
 
   return (
     <main className="h-full overflow-y-auto bg-gray-50 px-4 py-6 pb-24 sm:px-8 sm:py-8 lg:pb-8">
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-        <Link to="/appointments?new=1" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
-          <Plus className="h-4 w-4" aria-hidden="true" /> New appointment
-        </Link>
+        {canCreateAppointments && (
+          <Link to="/appointments?new=1" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
+            <Plus className="h-4 w-4" aria-hidden="true" /> New appointment
+          </Link>
+        )}
       </div>
 
-      {!readiness.bookingReady ? (
+      {isAdmin && readiness && !readiness.bookingReady ? (
         <section aria-labelledby="setup-title" className="max-w-3xl rounded-2xl border border-blue-100 bg-white p-5 shadow-sm sm:p-7">
           <p className="text-sm font-semibold uppercase tracking-wide text-blue-700">Welcome to Bookzi</p>
           <h2 id="setup-title" className="mt-1 text-2xl font-bold text-gray-900">
@@ -164,7 +174,7 @@ const DashboardPage = () => {
           </ul>
           <p className="mt-3 text-sm text-gray-500">Usually takes only a few minutes. WhatsApp and branding are optional.</p>
         </section>
-      ) : (
+      ) : isAdmin && readiness ? (
         <section aria-labelledby="ready-title" className="max-w-3xl rounded-2xl border border-green-200 bg-green-50 p-5 sm:p-7">
           <div className="flex items-start gap-3">
             <CheckCircle2 className="mt-1 h-6 w-6 shrink-0 text-green-700" aria-hidden="true" />
@@ -200,6 +210,13 @@ const DashboardPage = () => {
               {copyMessage && <p role="status" className="mt-3 text-sm text-green-900">{copyMessage}</p>}
             </div>
           </div>
+        </section>
+      ) : (
+        <section aria-labelledby="clinic-setup-title" className="max-w-3xl rounded-2xl border border-blue-100 bg-blue-50 p-5 sm:p-6">
+          <h2 id="clinic-setup-title" className="text-xl font-semibold text-gray-900">Your clinic workspace</h2>
+          <p className="mt-2 text-sm text-gray-700">
+            Clinic profile and online booking setup are managed by a clinic administrator. Receptionists can schedule appointments here; doctors can schedule for their linked provider and view that provider’s schedule.
+          </p>
         </section>
       )}
 

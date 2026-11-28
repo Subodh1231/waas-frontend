@@ -1,21 +1,18 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import { X, AlertCircle, CheckCircle, Clock, User, Calendar, FileText } from 'lucide-react';
 import {
   createAppointment,
   checkAvailability,
   getServiceProviders,
   searchPatients,
-  getClinicReadiness,
-  getApiErrorMessage,
   type CreateAppointmentRequest,
   type Staff,
   type PatientSearchResult,
   type AvailabilityCheckResponse,
   type ServiceItem,
-  type ClinicReadiness,
 } from '../lib/api';
 import api from '../lib/api';
+import { hasClinicRole } from '../lib/auth';
 
 interface AddAppointmentModalProps {
   isOpen: boolean;
@@ -36,7 +33,10 @@ export default function AddAppointmentModal({
   defaultProvider,
   defaultPatientId,
 }: AddAppointmentModalProps) {
-  const navigate = useNavigate();
+  const isDoctorOnly = hasClinicRole('DOCTOR')
+    && !hasClinicRole('ADMIN')
+    && !hasClinicRole('RECEPTIONIST');
+
   // Form state
   const [phone, setPhone] = useState('');
   const [patient, setPatient] = useState<PatientSearchResult | null>(null);
@@ -70,26 +70,6 @@ export default function AddAppointmentModal({
   const [availability, setAvailability] = useState<AvailabilityCheckResponse | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
-  const [readiness, setReadiness] = useState<ClinicReadiness | null>(null);
-  const [readinessLoading, setReadinessLoading] = useState(false);
-  const [readinessError, setReadinessError] = useState('');
-
-  const checkReadiness = useCallback(async () => {
-    setReadinessLoading(true);
-    setReadinessError('');
-    try {
-      setReadiness(await getClinicReadiness());
-    } catch (err: unknown) {
-      setReadiness(null);
-      setReadinessError(getApiErrorMessage(err, 'Could not verify the clinic setup.'));
-    } finally {
-      setReadinessLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (isOpen) void checkReadiness();
-  }, [isOpen, checkReadiness]);
 
   // Load providers on mount
   useEffect(() => {
@@ -100,7 +80,7 @@ export default function AddAppointmentModal({
   }, [isOpen]);
 
   useEffect(() => {
-    if (!isOpen || !defaultPatientId) return;
+    if (!isOpen || !defaultPatientId || isDoctorOnly) return;
     let active = true;
     api.get(`/api/patients/${defaultPatientId}`)
       .then(({ data }) => {
@@ -121,10 +101,14 @@ export default function AddAppointmentModal({
         if (active) setError(err.response?.data?.message || 'Could not load the selected patient.');
       });
     return () => { active = false; };
-  }, [isOpen, defaultPatientId]);
+  }, [isOpen, defaultPatientId, isDoctorOnly]);
 
   // Patient search with debounce
   useEffect(() => {
+    if (isDoctorOnly) {
+      setPatient(null);
+      return;
+    }
     if (phone.length < 3) {
       setPatient(null);
       return;
@@ -135,21 +119,26 @@ export default function AddAppointmentModal({
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [phone]);
+  }, [phone, isDoctorOnly]);
 
   // Check availability when time/provider changes
   useEffect(() => {
-    if (date && time && providerName && serviceId) {
+    if (date && time && providerName && providerId && serviceId) {
       checkSlotAvailability();
     }
-  }, [date, time, providerName, serviceId]);
+  }, [date, time, providerName, providerId, serviceId]);
 
   const loadProviders = async () => {
     try {
       const providers = await getServiceProviders();
       setProviders(providers);
+      if (isDoctorOnly && providers.length === 1) {
+        setProviderId(providers[0].id);
+        setProviderName(providers[0].name);
+      }
     } catch (err) {
       console.error('Failed to load providers:', err);
+      if (isDoctorOnly) setError('Could not load your linked provider. Please refresh and try again.');
     }
   };
 
@@ -221,7 +210,9 @@ export default function AddAppointmentModal({
       const result = await checkAvailability(
         providerName,
         startTime,
-        selectedService.durationMinutes || 30
+        selectedService.durationMinutes || 30,
+        providerId,
+        serviceId
       );
       setAvailability(result);
     } catch (err) {
@@ -283,7 +274,7 @@ export default function AddAppointmentModal({
       durationMinutes: selectedService?.durationMinutes,
       notes: notes || undefined,
       source: 'MANUAL',
-      payment: {
+      payment: isDoctorOnly ? undefined : {
         status: paymentStatus,
         mode: paymentMode,
         amount: paymentAmount ? parseFloat(paymentAmount) : undefined,
@@ -330,75 +321,6 @@ export default function AddAppointmentModal({
   };
 
   if (!isOpen) return null;
-
-  if (readinessLoading) {
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-        <div role="status" className="rounded-xl bg-white p-8 text-gray-700 shadow-xl">Checking clinic setup...</div>
-      </div>
-    );
-  }
-
-  if (!readiness || readinessError || !readiness.bookingReady) {
-    const tasks = [
-      { key: 'clinicProfileComplete', label: 'Complete clinic profile', href: '/settings?section=profile' },
-      { key: 'doctorConfigured', label: 'Add a doctor', href: '/settings?section=staff' },
-      { key: 'serviceConfigured', label: 'Add a service', href: '/services' },
-      { key: 'availabilityConfigured', label: 'Set availability', href: '/settings?section=staff' },
-    ] as const;
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true" aria-labelledby="appointment-setup-title">
-        <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h2 id="appointment-setup-title" className="text-xl font-bold text-gray-900">Complete your clinic setup first</h2>
-              <p className="mt-2 text-sm text-gray-600">
-                Bookzi needs the following before an appointment can be created:
-              </p>
-            </div>
-            <button type="button" onClick={onClose} aria-label="Close" className="text-gray-500 hover:text-gray-800">
-              <X className="h-5 w-5" />
-            </button>
-          </div>
-          {readinessError || !readiness ? (
-            <div role="alert" className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
-              <p>{readinessError || 'Clinic setup could not be loaded.'}</p>
-              <button type="button" onClick={() => void checkReadiness()} className="mt-2 font-semibold underline">Try again</button>
-            </div>
-          ) : (
-            <ul className="mt-4 space-y-3">
-              {tasks.map((task) => {
-                const complete = readiness[task.key];
-                return (
-                  <li key={task.key} className="flex items-center justify-between gap-3">
-                    <span className={complete ? 'text-green-800' : 'text-gray-800'}>
-                      {complete ? '✓ Completed: ' : '○ '}{task.label}
-                    </span>
-                    {!complete && (
-                      <button
-                        type="button"
-                        onClick={() => { onClose(); navigate(task.href); }}
-                        className="rounded-lg px-3 py-1.5 text-sm font-semibold text-blue-700 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      >
-                        Continue
-                      </button>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-          <button
-            type="button"
-            onClick={() => { onClose(); navigate('/dashboard'); }}
-            className="mt-6 w-full rounded-lg bg-blue-600 px-4 py-2.5 font-semibold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-          >
-            View setup checklist
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-stretch justify-stretch bg-black/50 p-0 sm:items-center sm:justify-center sm:p-4">
@@ -464,7 +386,12 @@ export default function AddAppointmentModal({
                 )}
               </div>
             )}
-            {!patient && phone.length >= 10 && !searchingPatient && (
+            {isDoctorOnly && phone.length >= 3 && (
+              <p className="mt-2 text-sm text-gray-600">
+                Patient records are not searchable from a doctor account. Enter the patient’s name and phone; existing records are reused by phone number.
+              </p>
+            )}
+            {!patient && phone.length >= 10 && !searchingPatient && !isDoctorOnly && (
               <p className="text-sm text-gray-600 mt-2">
                 ℹ️ New patient - details will be saved
               </p>
@@ -489,19 +416,23 @@ export default function AddAppointmentModal({
           )}
 
           <div>
-            <label className="mb-2 block text-sm font-medium text-gray-700">Email (optional)</label>
-            <input
-              type="email"
-              value={patientEmail}
-              onChange={(e) => setPatientEmail(e.target.value)}
-              placeholder="patient@example.com"
-              className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-blue-500"
-            />
-            {patient && patientEmail.trim() && patientEmail.trim().toLowerCase() !== (patient.email || '').trim().toLowerCase() && (
-              <label className="mt-2 flex items-start gap-2 text-sm text-gray-600">
-                <input type="checkbox" checked={updatePatientEmail} onChange={(e) => setUpdatePatientEmail(e.target.checked)} className="mt-1" />
-                <span>Update this patient’s email for future communication</span>
-              </label>
+            {!isDoctorOnly && (
+            <>
+              <label className="mb-2 block text-sm font-medium text-gray-700">Email (optional)</label>
+              <input
+                type="email"
+                value={patientEmail}
+                onChange={(e) => setPatientEmail(e.target.value)}
+                placeholder="patient@example.com"
+                className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-blue-500"
+              />
+              {patient && patientEmail.trim() && patientEmail.trim().toLowerCase() !== (patient.email || '').trim().toLowerCase() && (
+                <label className="mt-2 flex items-start gap-2 text-sm text-gray-600">
+                  <input type="checkbox" checked={updatePatientEmail} onChange={(e) => setUpdatePatientEmail(e.target.checked)} className="mt-1" />
+                  <span>Update this patient’s email for future communication</span>
+                </label>
+              )}
+            </>
             )}
           </div>
 
@@ -521,13 +452,15 @@ export default function AddAppointmentModal({
                   </div>
                   <div className="ml-3">
                     <h3 className="text-sm font-medium text-yellow-800">
-                      Setup Required
+                      {isDoctorOnly ? 'Provider Link Required' : 'Setup Required'}
                     </h3>
                     <div className="mt-2 text-sm text-yellow-700">
                       <p className="mb-3">
-                        You need to add at least one service provider before creating appointments.
+                        {isDoctorOnly
+                          ? 'Ask your clinic administrator to link an active doctor profile to your account before scheduling.'
+                          : 'You need to add at least one service provider before creating appointments.'}
                       </p>
-                      <div className="flex gap-3">
+                      {!isDoctorOnly && <div className="flex gap-3">
                         <a
                           href="/dashboard"
                           className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-yellow-800 bg-yellow-100 hover:bg-yellow-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
@@ -542,11 +475,19 @@ export default function AddAppointmentModal({
                         >
                           Go to Settings
                         </a>
-                      </div>
+                      </div>}
                     </div>
                   </div>
                 </div>
               </div>
+            ) : isDoctorOnly ? (
+              <input
+                type="text"
+                value={providerName}
+                readOnly
+                aria-label="Linked service provider"
+                className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 text-gray-700"
+              />
             ) : (
               <select
                 value={providerName}
@@ -692,7 +633,7 @@ export default function AddAppointmentModal({
           )}
 
           {/* Payment Details */}
-          <div className="border-t pt-4 space-y-4">
+          {!isDoctorOnly && <div className="border-t pt-4 space-y-4">
             <h3 className="text-sm font-semibold text-gray-700">Payment Information</h3>
             
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -744,10 +685,10 @@ export default function AddAppointmentModal({
                 />
               </div>
             </div>
-          </div>
+          </div>}
 
           {/* Notes */}
-          <div>
+          {!isDoctorOnly && <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               <FileText className="w-4 h-4 inline mr-2" />
               Notes (Optional)
@@ -759,7 +700,7 @@ export default function AddAppointmentModal({
               rows={3}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 resize-none"
             />
-          </div>
+          </div>}
 
           {/* Actions */}
           <div className="sticky bottom-0 flex flex-col-reverse justify-end gap-2 border-t bg-white pt-4 sm:flex-row sm:gap-3">

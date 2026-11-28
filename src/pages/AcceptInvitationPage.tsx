@@ -79,7 +79,7 @@ const AcceptInvitationPage = () => {
               <p className="mt-1 text-sm text-gray-700">Roles: {preview.roles.join(', ')}</p>
             </div>
             <p className="mt-4 text-sm text-gray-600">
-              Use your existing Bookzi password if you already have an account. New accounts must choose a password with at least 12 characters.
+              This invitation is tied to the email shown above. If you already have a Bookzi account with this email, use its existing password. If this email is new to Bookzi, choose a password with at least 12 characters. Ask the clinic admin to resend the invitation if the email is incorrect.
             </p>
             <form onSubmit={acceptInvitation} className="mt-5 space-y-4">
               <div>
@@ -87,7 +87,7 @@ const AcceptInvitationPage = () => {
                 <input id="invite-display-name" value={displayName} onChange={(event) => setDisplayName(event.target.value)} className="w-full rounded-lg border border-gray-300 px-3 py-2" autoComplete="name" />
               </div>
               <div>
-                <label htmlFor="invite-password" className="mb-1 block text-sm font-medium text-gray-700">Account password *</label>
+                <label htmlFor="invite-password" className="mb-1 block text-sm font-medium text-gray-700">Password for this invited email *</label>
                 <input
                   id="invite-password"
                   type="password"

@@ -2,6 +2,7 @@ import { useLocation } from 'react-router-dom';
 import SidebarItem from './SidebarItem';
 import { hasClinicRole, logout } from '../lib/auth';
 import ClinicSwitcher from './ClinicSwitcher';
+import { clinicalFeatureEnabled } from '../lib/clinical';
 
 const Sidebar = () => {
   const location = useLocation();
@@ -12,6 +13,9 @@ const Sidebar = () => {
   const menuItems = [
     ...(!doctor || admin || receptionist ? [{ path: '/dashboard', label: 'Dashboard' }] : []),
     { path: '/appointments', label: 'Appointments' },
+    ...(clinicalFeatureEnabled && doctor && !receptionist
+      ? [{ path: '/clinical/profile', label: 'Doctor profile' }]
+      : []),
     ...(admin || receptionist ? [{ path: '/invoices', label: 'Invoices' }] : []),
     ...(admin || receptionist ? [{ path: '/patients', label: 'Patients' }] : []),
     ...(admin ? [{ path: '/services', label: 'Services' }] : []),

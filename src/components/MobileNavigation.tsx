@@ -3,6 +3,7 @@ import { CalendarDays, Home, Menu, Plus, Users, X } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { getClinicRoles, logout } from '../lib/auth';
 import ClinicSwitcher from './ClinicSwitcher';
+import { clinicalFeatureEnabled } from '../lib/clinical';
 
 const MobileNavigation = () => {
   const location = useLocation();
@@ -24,6 +25,9 @@ const MobileNavigation = () => {
       { label: 'Document branding', to: '/settings?section=documents' },
       { label: 'Settings', to: '/settings' },
     ] : []),
+    ...(clinicalFeatureEnabled && doctor && !receptionist
+      ? [{ label: 'Doctor profile', to: '/clinical/profile' }]
+      : []),
     { label: 'Help', to: '/help' },
   ];
 
@@ -89,14 +93,14 @@ const MobileNavigation = () => {
           type="button"
           onClick={() => {
             setMoreOpen(false);
-            navigate(doctor && !admin && !receptionist ? '/appointments' : '/appointments?new=1');
+            navigate('/appointments?new=1');
           }}
           className="flex min-w-0 flex-col items-center justify-center gap-1 text-xs font-semibold text-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500"
         >
           <span className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-600 text-white">
-            {doctor && !admin && !receptionist ? <CalendarDays className="h-5 w-5" aria-hidden="true" /> : <Plus className="h-5 w-5" aria-hidden="true" />}
+            <Plus className="h-5 w-5" aria-hidden="true" />
           </span>
-          {doctor && !admin && !receptionist ? 'Schedule' : 'New'}
+          New
         </button>
         <Link
           to={admin || receptionist ? '/patients' : '/appointments'}

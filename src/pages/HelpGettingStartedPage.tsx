@@ -46,7 +46,7 @@ const HelpGettingStartedPage = () => {
             <section>
               <h2 className="text-xl font-semibold text-gray-900">2. Complete your clinic profile</h2>
               <p className="mt-2 text-gray-600">
-                From the dashboard checklist, choose <span className="font-medium text-gray-900">Complete clinic profile</span>. Your clinic name, phone, address and specialization are required before patients can book. Logo and other branding are optional.
+                Clinic admins can choose <span className="font-medium text-gray-900">Complete clinic profile</span> from the dashboard checklist. Your clinic name, phone, address and specialization are required before patients can book online. Receptionists can schedule manually, and doctors can schedule for their linked provider, while the public booking page is being set up. Logo and other branding are optional.
               </p>
               <ul className="mt-3 list-disc space-y-2 pl-5 text-gray-600">
                 <li>Clinic name</li>

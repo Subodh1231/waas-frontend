@@ -2,10 +2,10 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addDays, addMonths, parseISO, subMonths, startOfWeek, endOfWeek, isToday } from 'date-fns';
 import { CalendarDays, ChevronLeft, ChevronRight, Plus, Star } from 'lucide-react';
-import api from '../lib/api';
-import { getAppointmentFeedback, type AppointmentFeedbackView } from '../lib/api';
+import api, { getAppointmentFeedback, getApiErrorMessage, type AppointmentFeedbackView } from '../lib/api';
 import AddAppointmentModal from '../components/AddAppointmentModal';
 import { hasClinicRole } from '../lib/auth';
+import { clinicalFeatureEnabled, startOrResumeClinicalVisit } from '../lib/clinical';
 
 interface Booking {
   id: string;
@@ -33,6 +33,7 @@ type StatusFilter = 'ALL' | 'PENDING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED';
 
 const AppointmentsPage = () => {
   const canManageAppointments = hasClinicRole('ADMIN') || hasClinicRole('RECEPTIONIST');
+  const canCreateAppointments = canManageAppointments || hasClinicRole('DOCTOR');
   const [searchParams, setSearchParams] = useSearchParams();
   const [appointmentPatientId, setAppointmentPatientId] = useState<string | undefined>();
   const [viewMode, setViewMode] = useState<ViewMode>('calendar');
@@ -62,7 +63,7 @@ const AppointmentsPage = () => {
   useEffect(() => {
     const patientId = searchParams.get('patientId');
     const shouldCreateAppointment = searchParams.get('new') === '1';
-    if (!canManageAppointments && (patientId || shouldCreateAppointment)) {
+    if (!canCreateAppointments && shouldCreateAppointment) {
       setSearchParams((current) => {
         current.delete('patientId');
         current.delete('new');
@@ -70,15 +71,24 @@ const AppointmentsPage = () => {
       }, { replace: true });
       return;
     }
-    if (!patientId && !shouldCreateAppointment) return;
-    if (patientId) setAppointmentPatientId(patientId);
+    const permittedPatientId = canManageAppointments ? patientId : null;
+    if (!permittedPatientId && !shouldCreateAppointment) {
+      if (patientId) {
+        setSearchParams((current) => {
+          current.delete('patientId');
+          return current;
+        }, { replace: true });
+      }
+      return;
+    }
+    if (permittedPatientId) setAppointmentPatientId(permittedPatientId);
     setShowAddModal(true);
     setSearchParams((current) => {
       current.delete('patientId');
       current.delete('new');
       return current;
     }, { replace: true });
-  }, [canManageAppointments, searchParams, setSearchParams]);
+  }, [canCreateAppointments, canManageAppointments, searchParams, setSearchParams]);
 
   // Fetch bookings data
   const fetchBookings = async () => {
@@ -775,7 +785,7 @@ const AppointmentsPage = () => {
           <h1 className="mb-1 text-2xl font-bold text-gray-800 lg:mb-2 lg:text-3xl">Appointments</h1>
           <p className="hidden text-gray-600 lg:block">Manage and view your clinic appointments</p>
         </div>
-        {canManageAppointments && <button
+        {canCreateAppointments && <button
           onClick={() => {
             setAppointmentPatientId(undefined);
             setShowAddModal(true);
@@ -913,6 +923,9 @@ const AppointmentsPage = () => {
           onUpdateStatus={updateBookingStatus}
           onCancel={handleCancelClick}
           readOnly={!canManageAppointments}
+          showClinicalAction={clinicalFeatureEnabled
+            && hasClinicRole('DOCTOR')
+            && !hasClinicRole('RECEPTIONIST')}
         />
       )}
 
@@ -1076,16 +1089,20 @@ const BookingDetailModal = ({
   onClose,
   onUpdateStatus,
   onCancel,
-  readOnly
+  readOnly,
+  showClinicalAction
 }: {
   booking: Booking;
   onClose: () => void;
   onUpdateStatus: (id: string, status: string) => void;
   onCancel: (id: string) => void;
   readOnly: boolean;
+  showClinicalAction: boolean;
 }) => {
   const navigate = useNavigate();
   const isCompleted = booking.status === 'COMPLETED' || booking.appointmentStatus === 'COMPLETED';
+  const isCancelled = booking.status === 'CANCELLED' || booking.appointmentStatus === 'CANCELLED'
+    || booking.status === 'NO_SHOW' || booking.appointmentStatus === 'NO_SHOW';
   const [existingInvoiceId, setExistingInvoiceId] = useState<string | null>(null);
   const [editingPayment, setEditingPayment] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState(booking.paymentStatus || 'PENDING');
@@ -1093,6 +1110,22 @@ const BookingDetailModal = ({
   const [paymentAmount, setPaymentAmount] = useState(booking.paymentAmount?.toString() || '');
   const [feedback, setFeedback] = useState<AppointmentFeedbackView | null>(null);
   const [feedbackLoading, setFeedbackLoading] = useState(false);
+  const [startingClinicalVisit, setStartingClinicalVisit] = useState(false);
+  const [clinicalError, setClinicalError] = useState('');
+
+  const openClinicalVisit = async () => {
+    setStartingClinicalVisit(true);
+    setClinicalError('');
+    try {
+      const visit = await startOrResumeClinicalVisit(booking.id);
+      onClose();
+      navigate(`/clinical/visits/${visit.id}`);
+    } catch (requestError: unknown) {
+      setClinicalError(getApiErrorMessage(requestError, 'Could not open this clinical visit.'));
+    } finally {
+      setStartingClinicalVisit(false);
+    }
+  };
 
   useEffect(() => {
     let active = true;
@@ -1347,6 +1380,19 @@ const BookingDetailModal = ({
 
         {/* Modal Actions */}
         <div className="sticky bottom-0 flex shrink-0 flex-col gap-2 border-t bg-gray-50 px-4 py-3 sm:flex-row sm:justify-end sm:px-6 sm:py-4">
+          {showClinicalAction && !isCancelled && (
+            <div className="flex flex-col gap-2 sm:mr-auto sm:flex-row sm:items-center">
+              <button
+                type="button"
+                onClick={openClinicalVisit}
+                disabled={startingClinicalVisit}
+                className="min-h-11 rounded bg-indigo-700 px-4 py-2 font-medium text-white hover:bg-indigo-800 disabled:opacity-60"
+              >
+                {startingClinicalVisit ? 'Opening visit…' : 'Start / resume clinical visit'}
+              </button>
+              {clinicalError && <p role="alert" className="max-w-xs text-sm text-red-700">{clinicalError}</p>}
+            </div>
+          )}
           {isCompleted && !readOnly && (
             <button
               onClick={() => navigate(existingInvoiceId

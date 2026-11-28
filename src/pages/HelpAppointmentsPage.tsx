@@ -25,6 +25,9 @@ const HelpAppointmentsPage = () => {
               <p className="mt-2 text-gray-600">
                 Open the <span className="font-medium text-gray-900">Appointments</span> page from the Bookzi dashboard. The calendar and list views show appointments by date and provider.
               </p>
+              <p className="mt-2 text-gray-600">
+                Clinic admins and receptionists can create and manage manual appointments. Doctor-only accounts can create appointments for their linked provider and view that provider’s schedule, but cannot edit or cancel appointments. Patient lookup and payment controls remain available to admins and receptionists. Completing the clinic profile is required for the public online booking page, not for manual scheduling.
+              </p>
             </section>
 
             <section>

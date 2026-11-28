@@ -4,6 +4,7 @@ import ProtectedRoute from './routes/ProtectedRoute';
 import DashboardLayout from './layouts/DashboardLayout';
 import LoadingSpinner from './components/LoadingSpinner';
 import ClinicRoleRoute from './routes/ClinicRoleRoute';
+import ClinicalFeatureRoute from './routes/ClinicalFeatureRoute';
 
 // Lazy load pages for code splitting
 const LandingPage = lazy(() => import('./pages/LandingPage'));
@@ -30,6 +31,8 @@ const HelpPatientBookingPage = lazy(() => import('./pages/HelpPatientBookingPage
 const HelpAppointmentsPage = lazy(() => import('./pages/HelpAppointmentsPage'));
 const HelpDocumentBrandingPage = lazy(() => import('./pages/HelpDocumentBrandingPage'));
 const AcceptInvitationPage = lazy(() => import('./pages/AcceptInvitationPage'));
+const ClinicalVisitPage = lazy(() => import('./pages/ClinicalVisitPage'));
+const DoctorProfessionalProfilePage = lazy(() => import('./pages/DoctorProfessionalProfilePage'));
 
 function App() {
   return (
@@ -70,6 +73,8 @@ function App() {
               <Route path="/patients/:patientId" element={<ClinicRoleRoute roles={['ADMIN', 'RECEPTIONIST']}><PatientDetailPage /></ClinicRoleRoute>} />
               <Route path="/services" element={<ClinicRoleRoute roles={['ADMIN']}><ServicesPage /></ClinicRoleRoute>} />
               <Route path="/appointments" element={<AppointmentsPage />} />
+              <Route path="/clinical/visits/:visitId" element={<ClinicalFeatureRoute><ClinicalVisitPage /></ClinicalFeatureRoute>} />
+              <Route path="/clinical/profile" element={<ClinicalFeatureRoute><DoctorProfessionalProfilePage /></ClinicalFeatureRoute>} />
               <Route path="/invoices" element={<ClinicRoleRoute roles={['ADMIN', 'RECEPTIONIST']}><InvoicesPage /></ClinicRoleRoute>} />
               <Route path="/invoices/:invoiceId" element={<ClinicRoleRoute roles={['ADMIN', 'RECEPTIONIST']}><InvoicesPage /></ClinicRoleRoute>} />
               <Route path="/feedback" element={<ClinicRoleRoute roles={['ADMIN']}><FeedbackPage /></ClinicRoleRoute>} />

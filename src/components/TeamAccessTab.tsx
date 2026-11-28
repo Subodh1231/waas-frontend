@@ -12,6 +12,8 @@ interface TeamMember {
   roles: ClinicRole[];
   providerId?: string;
   providerName?: string;
+  doctorCredentialsConfirmedBy?: string;
+  doctorCredentialsConfirmedAt?: string;
 }
 
 interface TeamInvitation {
@@ -22,6 +24,8 @@ interface TeamInvitation {
   providerId?: string;
   status: string;
   expiresAt: string;
+  doctorCredentialsConfirmedBy?: string;
+  doctorCredentialsConfirmedAt?: string;
 }
 
 interface Provider {
@@ -33,6 +37,8 @@ interface MemberForm {
   displayName: string;
   roles: ClinicRole[];
   providerId: string;
+  doctorCredentialsConfirmed: boolean;
+  revokeDoctorCredentialsConfirmation: boolean;
 }
 
 const roleOptions: { value: ClinicRole; label: string }[] = [
@@ -41,7 +47,13 @@ const roleOptions: { value: ClinicRole; label: string }[] = [
   { value: 'DOCTOR', label: 'Doctor' },
 ];
 
-const emptyForm = (): MemberForm => ({ displayName: '', roles: ['RECEPTIONIST'], providerId: '' });
+const emptyForm = (): MemberForm => ({
+  displayName: '',
+  roles: ['RECEPTIONIST'],
+  providerId: '',
+  doctorCredentialsConfirmed: false,
+  revokeDoctorCredentialsConfirmation: false,
+});
 
 const TeamAccessTab = () => {
   const [members, setMembers] = useState<TeamMember[]>([]);
@@ -83,7 +95,18 @@ const TeamAccessTab = () => {
     const roles = current.roles.includes(role)
       ? current.roles.filter((item) => item !== role)
       : [...current.roles, role];
-    setCurrent({ ...current, roles, providerId: roles.includes('DOCTOR') ? current.providerId : '' });
+    const hasDoctorRole = roles.includes('DOCTOR');
+    setCurrent({
+      ...current,
+      roles,
+      providerId: hasDoctorRole ? current.providerId : '',
+      doctorCredentialsConfirmed: hasDoctorRole
+        ? current.roles.includes('DOCTOR') && current.doctorCredentialsConfirmed
+        : false,
+      revokeDoctorCredentialsConfirmation: hasDoctorRole
+        ? current.roles.includes('DOCTOR') && current.revokeDoctorCredentialsConfirmation
+        : false,
+    });
   };
 
   const submitInvite = async (event: React.FormEvent) => {
@@ -98,6 +121,10 @@ const TeamAccessTab = () => {
       setError('Link the doctor account to a provider profile.');
       return;
     }
+    if (form.roles.includes('DOCTOR') && !form.doctorCredentialsConfirmed) {
+      setError('Confirm that the clinic has checked this doctor’s credentials before sending the invitation.');
+      return;
+    }
     setSaving(true);
     try {
       await api.post('/api/team/invitations', {
@@ -105,6 +132,7 @@ const TeamAccessTab = () => {
         displayName: form.displayName,
         roles: form.roles,
         providerId: form.roles.includes('DOCTOR') ? form.providerId : null,
+        doctorCredentialsConfirmed: form.doctorCredentialsConfirmed,
       });
       setEmail('');
       setForm(emptyForm());
@@ -123,6 +151,8 @@ const TeamAccessTab = () => {
       displayName: member.displayName || '',
       roles: member.roles,
       providerId: member.providerId || '',
+      doctorCredentialsConfirmed: false,
+      revokeDoctorCredentialsConfirmation: false,
     });
   };
 
@@ -135,12 +165,22 @@ const TeamAccessTab = () => {
       setError('Link the doctor account to a provider profile.');
       return;
     }
+    const doctorApprovalRequired = editForm.roles.includes('DOCTOR')
+      && (!editingMember.doctorCredentialsConfirmedAt
+        || !editingMember.roles.includes('DOCTOR')
+        || editingMember.providerId !== editForm.providerId);
+    if (doctorApprovalRequired && !editForm.doctorCredentialsConfirmed) {
+      setError('Confirm that the clinic has checked this doctor’s credentials before granting clinical access.');
+      return;
+    }
     setSaving(true);
     try {
       await api.patch(`/api/team/members/${editingMember.id}`, {
         displayName: editForm.displayName,
         roles: editForm.roles,
         providerId: editForm.roles.includes('DOCTOR') ? editForm.providerId : null,
+        doctorCredentialsConfirmed: editForm.doctorCredentialsConfirmed,
+        revokeDoctorCredentialsConfirmation: editForm.revokeDoctorCredentialsConfirmation,
       });
       setEditingMember(null);
       setNotice('Membership access updated.');
@@ -216,7 +256,12 @@ const TeamAccessTab = () => {
       <select
         required
         value={current.providerId}
-        onChange={(event) => setCurrent({ ...current, providerId: event.target.value })}
+        onChange={(event) => setCurrent({
+          ...current,
+          providerId: event.target.value,
+          doctorCredentialsConfirmed: false,
+          revokeDoctorCredentialsConfirmation: false,
+        })}
         className="w-full rounded-lg border border-gray-300 px-3 py-2"
       >
         <option value="">Select a doctor profile</option>
@@ -224,6 +269,51 @@ const TeamAccessTab = () => {
       </select>
       {providers.length === 0 && <p className="mt-1 text-sm text-amber-700">Create an active doctor profile under Providers &amp; Availability first.</p>}
     </div>
+  );
+
+  const renderDoctorCredentialConfirmation = (
+    current: MemberForm,
+    setCurrent: (next: MemberForm) => void,
+    required: boolean,
+  ) => current.roles.includes('DOCTOR') && (
+    <label className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950">
+      <input
+        type="checkbox"
+        required={required}
+        checked={current.doctorCredentialsConfirmed}
+        onChange={(event) => setCurrent({
+          ...current,
+          doctorCredentialsConfirmed: event.target.checked,
+          revokeDoctorCredentialsConfirmation: event.target.checked
+            ? false
+            : current.revokeDoctorCredentialsConfirmation,
+        })}
+        className="mt-1 h-4 w-4"
+      />
+      <span>
+        I confirm the clinic has checked this doctor’s identity, qualifications and current registration, and authorizes this account for clinical work. Bookzi does not independently verify credentials.
+      </span>
+    </label>
+  );
+
+  const renderDoctorCredentialRevocation = (
+    current: MemberForm,
+    setCurrent: (next: MemberForm) => void,
+    member: TeamMember,
+  ) => current.roles.includes('DOCTOR') && member.doctorCredentialsConfirmedAt && (
+    <label className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-900">
+      <input
+        type="checkbox"
+        checked={current.revokeDoctorCredentialsConfirmation}
+        onChange={(event) => setCurrent({
+          ...current,
+          revokeDoctorCredentialsConfirmation: event.target.checked,
+          doctorCredentialsConfirmed: event.target.checked ? false : current.doctorCredentialsConfirmed,
+        })}
+        className="mt-1 h-4 w-4"
+      />
+      <span>Revoke the clinic’s credential confirmation and block this account from clinical records.</span>
+    </label>
   );
 
   if (loading) return <div className="rounded-lg bg-white p-6 text-sm text-gray-600">Loading team access…</div>;
@@ -235,7 +325,7 @@ const TeamAccessTab = () => {
           <Shield className="mt-0.5 h-5 w-5 shrink-0 text-blue-700" aria-hidden="true" />
           <div>
             <h2 className="text-xl font-semibold text-gray-900">Team &amp; Access</h2>
-            <p className="mt-1 text-sm text-gray-700">Invite individual accounts and grant predefined clinic roles. Provider profiles remain managed separately. If an owner password is shared, invite individual accounts first, then rotate it under Account &amp; Security.</p>
+            <p className="mt-1 text-sm text-gray-700">Invite individual accounts and grant predefined clinic roles. For a doctor account, the clinic must confirm it has checked the doctor’s credentials; Bookzi does not independently verify them. Provider profiles remain managed separately.</p>
           </div>
         </div>
       </section>
@@ -259,6 +349,7 @@ const TeamAccessTab = () => {
           </div>
           <div className="md:col-span-2">{renderRolePicker(form, setForm)}</div>
           <div className="md:col-span-2">{renderProviderSelect(form, setForm)}</div>
+          <div className="md:col-span-2">{renderDoctorCredentialConfirmation(form, setForm, form.roles.includes('DOCTOR'))}</div>
           <div className="md:col-span-2">
             <button type="submit" disabled={saving} className="rounded-lg bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700 disabled:opacity-60">
               {saving ? 'Sending…' : 'Send invitation'}
@@ -281,6 +372,13 @@ const TeamAccessTab = () => {
                 <p className="mt-1 text-xs text-gray-500">
                   {member.roles.join(' · ')}{member.providerName ? ` · Provider: ${member.providerName}` : ''}
                 </p>
+                {member.roles.includes('DOCTOR') && (
+                  <p className={`mt-1 text-xs ${member.doctorCredentialsConfirmedAt ? 'text-green-700' : 'text-amber-800'}`}>
+                    {member.doctorCredentialsConfirmedAt
+                      ? `Clinic credential check confirmed ${new Date(member.doctorCredentialsConfirmedAt).toLocaleDateString()}`
+                      : 'Clinic credential check pending — clinical access is blocked'}
+                  </p>
+                )}
               </div>
               <div className="flex shrink-0 gap-2">
                 <button type="button" onClick={() => startEditing(member)} className="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Edit access</button>
@@ -303,6 +401,13 @@ const TeamAccessTab = () => {
                 <p className="truncate font-medium text-gray-900">{invitation.displayName || invitation.email}</p>
                 <p className="truncate text-sm text-gray-600">{invitation.email}</p>
                 <p className="mt-1 text-xs text-gray-500">{invitation.roles.join(' · ')} · {invitation.status.toLowerCase()}</p>
+                {invitation.roles.includes('DOCTOR') && (
+                  <p className={`mt-1 text-xs ${invitation.doctorCredentialsConfirmedAt ? 'text-green-700' : 'text-amber-800'}`}>
+                    {invitation.doctorCredentialsConfirmedAt
+                      ? `Clinic credential check confirmed ${new Date(invitation.doctorCredentialsConfirmedAt).toLocaleDateString()}`
+                      : 'Clinic credential check pending — clinical access is blocked'}
+                  </p>
+                )}
               </div>
               {invitation.status === 'PENDING' && (
                 <div className="flex shrink-0 gap-2">
@@ -333,6 +438,15 @@ const TeamAccessTab = () => {
             </div>
             {renderRolePicker(editForm, setEditForm)}
             {renderProviderSelect(editForm, setEditForm)}
+            {renderDoctorCredentialConfirmation(
+              editForm,
+              setEditForm,
+              editForm.roles.includes('DOCTOR')
+                && (!editingMember.doctorCredentialsConfirmedAt
+                  || !editingMember.roles.includes('DOCTOR')
+                  || editingMember.providerId !== editForm.providerId),
+            )}
+            {renderDoctorCredentialRevocation(editForm, setEditForm, editingMember)}
             <div className="flex justify-end gap-2">
               <button type="button" onClick={() => setEditingMember(null)} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700">Cancel</button>
               <button type="submit" disabled={saving} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-60">Save access</button>
